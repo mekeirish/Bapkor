@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#050608">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon.png">
+<title>APKor — Android Builder</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+window.tailwind = window.tailwind || {};
+window.tailwind.config = { theme: { extend: { fontFamily: { inter: ["Inter", "sans-serif"] } } } };
+</script>
+<style>
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body{ width:100%; height:100%; margin:0; overflow:hidden; background:#050608; }
+body{ font-family:Inter,sans-serif; color:#f8fafc; background:#050608; position:relative; -webkit-user-select:none; user-select:none; }
+input, textarea{ -webkit-user-select:text; user-select:text; }
+
+/* ========================================================= AURORA ========================================================= */
+.aurora{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+.aurora::before, .aurora::after, .aurora .orb{
+  content:""; position:absolute; border-radius:50%;
+  filter: blur(90px); opacity:.55; will-change:transform;
+}
+.aurora::before{ width:60vmax; height:60vmax; background: radial-gradient(circle, rgba(250,204,21,.4), transparent 65%); top:-20vmax; left:-15vmax; animation: auroraA 38s ease-in-out infinite; }
+.aurora::after{ width:55vmax; height:55vmax; background: radial-gradient(circle, rgba(234,179,8,.28), transparent 65%); bottom:-18vmax; right:-15vmax; animation: auroraB 46s ease-in-out infinite; }
+.aurora .orb{ width:45vmax; height:45vmax; background: radial-gradient(circle, rgba(202,138,4,.22), transparent 70%); top:35%; left:30%; animation: auroraC 52s ease-in-out infinite; }
+@keyframes auroraA{ 0%,100%{ transform: translate(0,0) scale(1); } 50%{ transform: translate(6vmax,4vmax) scale(1.12); } }
+@keyframes auroraB{ 0%,100%{ transform: translate(0,0) scale(1); } 50%{ transform: translate(-5vmax,-3vmax) scale(1.15); } }
+@keyframes auroraC{ 0%,100%{ transform: translate(-3vmax,2vmax) scale(1); } 50%{ transform: translate(4vmax,-4vmax) scale(1.08); } }
+.noise{
+  position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+button, input, textarea, select{ font-family:inherit; }
+button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
+.app{ position:relative; z-index:2; width:100%; height:100dvh; min-height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
+.app-inner{
+  width:100%; max-width:680px; height:100%; margin:auto;
+  padding: max(6px,env(safe-area-inset-top)) 8px max(6px,env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.glass{
+  background: linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.075);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 18px 50px rgba(0,0,0,.28);
+  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+}
+.glass-accent{
+  border:1px solid rgba(250,204,21,.25);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 1px rgba(250,204,21,.05), 0 18px 50px rgba(0,0,0,.28), 0 0 40px rgba(250,204,21,.08);
+}
+
+/* ========================================================= HEADER ========================================================= */
+.header{
+  height:44px; min-height:44px;
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:5px; flex:0 0 auto;
+}
+.brand{ display:flex; align-items:center; gap:8px; min-width:0; position:relative; }
+.brand-logo{
+  width:32px; height:32px; flex:0 0 32px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+  background: linear-gradient(145deg, rgba(250,204,21,.3), rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow: 0 0 25px rgba(250,204,21,.25), inset 0 1px rgba(255,255,255,.08);
+}
+.brand-logo::after{
+  content:""; position:absolute; inset:-50%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(250,204,21,.5) 90deg, transparent 180deg, rgba(234,179,8,.5) 270deg, transparent 360deg);
+  animation: logoSpin 12s linear infinite; opacity:.6;
+}
+.brand-logo span{ font-size:14px; font-weight:800; position:relative; z-index:2; color:#fef3c7; }
+@keyframes logoSpin{ to{ transform: rotate(360deg); } }
+.brand-name{ font-size:14px; line-height:15px; font-weight:800; letter-spacing:-.4px; }
+.brand-sub{ margin-top:1px; color:#64748b; font-size:5.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+.header-right{ display:flex; align-items:center; gap:5px; }
+.status-badge{
+  display:flex; align-items:center; gap:5px;
+  height:24px; padding:0 8px; border-radius:7px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06);
+  font-size:6px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+  color:#64748b;
+  max-width:140px;
+}
+.status-badge .dot{ width:5px; height:5px; border-radius:50%; background:#475569; transition:.3s ease; flex-shrink:0; }
+.status-badge.ready .dot{ background:#22c55e; box-shadow: 0 0 4px #22c55e, 0 0 8px rgba(34,197,94,.6); }
+.status-badge.ready{ color:#86efac; border-color:rgba(34,197,94,.2); }
+.status-badge.loading .dot{ background:#facc15; box-shadow: 0 0 4px #facc15, 0 0 8px rgba(250,204,21,.6); animation: badgeBlink 0.9s infinite alternate; }
+.status-badge.loading{ color:#fde68a; border-color:rgba(250,204,21,.25); }
+.status-badge.success .dot{ background:#22c55e; box-shadow: 0 0 6px #22c55e, 0 0 12px rgba(34,197,94,.8); }
+.status-badge.success{ color:#86efac; border-color:rgba(34,197,94,.3); }
+.status-badge.error .dot{ background:#ef4444; box-shadow: 0 0 6px #ef4444, 0 0 12px rgba(239,68,68,.8); }
+.status-badge.error{ color:#fca5a5; border-color:rgba(239,68,68,.3); }
+@keyframes badgeBlink{ 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+.header-btn{
+  width:42px; height:42px; flex:0 0 42px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  color:#fde047; font-size:15px;
+  transition:.2s ease;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06);
+}
+.header-btn:active{ transform:scale(.94); background:rgba(250,204,21,.13); }
+.save-indicator{
+  position:absolute; top:-2px; left:-2px;
+  width:8px; height:8px; border-radius:50%;
+  background:#22c55e; box-shadow: 0 0 6px #22c55e;
+  opacity:0; transition:.3s ease;
+}
+.save-indicator.show{ opacity:1; }
+
+/* ========================================================= MAIN ========================================================= */
+.main{ flex:1; min-height:0; display:flex; flex-direction:column; gap:6px; overflow:hidden; }
+.card{ border-radius:16px; padding:10px; flex:0 0 auto; }
+
+.section-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.section-title{ font-size:7px; text-transform:uppercase; letter-spacing:.17em; color:#64748b; font-weight:800; }
+.section-name{ font-size:13px; font-weight:800; margin-top:1px; color:#e2e8f0; }
+.section-badge{
+  font-size:6px; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+  padding:3px 8px; border-radius:6px;
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);
+  color:#64748b;
+}
+.section-badge.accent{ color:#fde047; border-color:rgba(250,204,21,.25); background:rgba(250,204,21,.08); }
+
+/* ========================================================= TOGGLE MODE ========================================================= */
+.mode-toggle{
+  display:grid; grid-template-columns:1fr 1fr; gap:5px;
+  padding:4px; border-radius:12px;
+  background:rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.06);
+  margin-bottom:8px;
+}
+.mode-btn{
+  height:38px; border-radius:9px;
+  background:transparent; border:1px solid transparent;
+  color:#64748b; font-size:8px; font-weight:800;
+  letter-spacing:.08em; text-transform:uppercase;
+  display:flex; align-items:center; justify-content:center; gap:5px;
+  transition:.2s ease;
+}
+.mode-btn.active{
+  color:#fde047;
+  background:rgba(250,204,21,.13);
+  border-color:rgba(250,204,21,.28);
+  box-shadow: 0 0 20px rgba(250,204,21,.08), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.mode-btn:active{ transform:scale(.97); }
+
+/* ========================================================= FIELD ROWS ========================================================= */
+.field-wrap{ margin-bottom:8px; }
+.field-label{
+  display:block; color:#64748b; font-size:7px; line-height:9px;
+  text-transform:uppercase; letter-spacing:.13em; font-weight:800;
+  margin:0 0 5px 2px;
+}
+
+/* Ligne token avec boutons d'aide */
+.token-row{
+  display:grid;
+  grid-template-columns: minmax(0,1fr) 42px 42px 42px;
+  gap:4px; width:100%;
+}
+.field{
+  width:100%; min-width:0; height:42px; border-radius:11px;
+  background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.08);
+  color:#f8fafc; outline:none; padding:0 12px; font-size:12px;
+  transition:.2s ease; overflow:hidden; text-overflow:ellipsis;
+}
+.field::placeholder{ color:#475569; }
+.field:focus{ border-color:rgba(250,204,21,.65); box-shadow:0 0 0 2px rgba(250,204,21,.1); }
+.field.mono{ font-family:"Courier New",monospace; font-size:11px; }
+.field.token-color{ color:#fde047; }
+.field:disabled{ opacity:.5; cursor:not-allowed; }
+
+.icon-btn{
+  height:42px; width:42px; border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06);
+  color:#94a3b8; font-size:15px;
+  transition:.2s ease;
+}
+.icon-btn:active{ transform:scale(.9); background:rgba(255,255,255,.1); }
+.icon-btn.accent{ color:#fde047; border-color:rgba(250,204,21,.25); }
+.icon-btn.accent:active{ background:rgba(250,204,21,.15); }
+.icon-btn.danger{ color:#f87171; }
+.icon-btn.danger:active{ background:rgba(239,68,68,.15); }
+
+/* ========================================================= AUTOCOMPLETE REPO ========================================================= */
+.repo-wrap{ position:relative; }
+.repo-input-row{
+  display:grid;
+  grid-template-columns: minmax(0,1fr) 42px;
+  gap:4px;
+}
+.repo-dropdown{
+  position:absolute; top:100%; left:0; right:0; z-index:100;
+  margin-top:4px;
+  background:rgba(15,18,25,.98);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(250,204,21,.25);
+  border-radius:12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.7);
+  max-height:220px; overflow-y:auto;
+  display:none;
+}
+.repo-dropdown.open{ display:block; }
+.repo-dropdown::-webkit-scrollbar{ width:3px; }
+.repo-dropdown::-webkit-scrollbar-thumb{ background:rgba(250,204,21,.3); border-radius:2px; }
+.repo-option{
+  padding:10px 12px;
+  cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  transition:.12s ease;
+  display:flex; align-items:center; gap:8px;
+}
+.repo-option:last-child{ border-bottom:none; }
+.repo-option:active, .repo-option.active{ background:rgba(250,204,21,.12); }
+.repo-option-name{
+  font-size:11px; font-weight:800; color:#e2e8f0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;
+}
+.repo-option-name .match-hl{
+  background: rgba(250,204,21,.3);
+  color:#fef3c7;
+  border-radius:3px;
+  padding:0 2px;
+}
+.repo-option-meta{
+  display:flex; gap:5px; flex-shrink:0;
+}
+.repo-option-branch{
+  font-size:7px; font-weight:800;
+  background:rgba(250,204,21,.12);
+  border:1px solid rgba(250,204,21,.2);
+  border-radius:5px;
+  padding:1px 5px;
+  color:#fde047;
+}
+.repo-option-private{ font-size:9px; opacity:.6; }
+.repo-dropdown-empty{
+  padding:14px;
+  text-align:center;
+  font-size:10px; color:#64748b;
+}
+
+/* ========================================================= TEXTAREA ========================================================= */
+.code-editor{
+  width:100%; min-height:180px;
+  background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  padding:10px 12px;
+  color:#e2e8f0;
+  font-family:"Courier New",monospace;
+  font-size:12px; line-height:1.55;
+  resize:vertical; outline:none;
+  transition:.2s ease;
+  -webkit-user-select:text; user-select:text;
+  display:none;
+}
+.code-editor.visible{ display:block; }
+.code-editor:focus{ border-color:rgba(250,204,21,.6); box-shadow:0 0 0 2px rgba(250,204,21,.1); }
+.code-editor::placeholder{ color:#475569; }
+
+/* ========================================================= ICON AREA ========================================================= */
+.icon-area{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 12px;
+  background:rgba(0,0,0,.2);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:12px;
+}
+.icon-preview{
+  width:64px; height:64px; flex:0 0 64px;
+  border-radius:12px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; color:rgba(255,255,255,.2);
+  overflow:hidden; position:relative;
+}
+.icon-preview img{ width:100%; height:100%; object-fit:cover; }
+.icon-actions{ display:flex; flex-direction:column; gap:6px; flex:1; min-width:0; }
+.icon-btn-row{ display:flex; gap:5px; flex-wrap:wrap; }
+.icon-btn-sm{
+  height:32px; padding:0 10px; border-radius:8px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  color:#cbd5e1; font-size:7px; font-weight:800;
+  letter-spacing:.06em; text-transform:uppercase;
+  display:flex; align-items:center; gap:5px;
+  transition:.15s ease;
+}
+.icon-btn-sm:active{ transform:scale(.94); background:rgba(255,255,255,.1); }
+.icon-btn-sm.accent{ color:#fde047; border-color:rgba(250,204,21,.25); }
+.icon-btn-sm.accent:active{ background:rgba(250,204,21,.15); }
+.icon-btn-sm.danger{ color:#f87171; border-color:rgba(239,68,68,.2); }
+.icon-btn-sm.danger:active{ background:rgba(239,68,68,.15); }
+.icon-size-badge{
+  font-size:6px; color:#64748b; font-weight:800;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:6px;
+  padding:2px 6px;
+  letter-spacing:.05em;
+  align-self:flex-start;
+}
+.icon-warning{
+  margin-top:5px; font-size:7px; color:#fcd34d;
+  display:none; align-items:center; gap:4px;
+}
+.icon-warning.visible{ display:flex; }
+
+/* ========================================================= BUTTONS ========================================================= */
+.btn{
+  height:46px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  font-weight:800; font-size:10px; letter-spacing:.06em;
+  text-transform:uppercase;
+  transition:.15s ease;
+  border:1px solid transparent;
+  white-space:nowrap; overflow:hidden;
+}
+.btn:active{ transform:scale(.97); }
+.btn:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
+
+.btn-primary{
+  color:#0f172a;
+  background: linear-gradient(135deg, #facc15, #eab308);
+  border-color: rgba(254,240,138,.5);
+  box-shadow: 0 10px 28px rgba(250,204,21,.35), inset 0 1px 0 rgba(255,255,255,.4);
+  width:100%; height:52px;
+  font-size:11px;
+}
+.btn-primary:active:not(:disabled){ box-shadow: 0 6px 18px rgba(250,204,21,.35); }
+
+.btn-success{
+  color:white;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-color: rgba(74,222,128,.4);
+  box-shadow: 0 10px 28px rgba(34,197,94,.3), inset 0 1px 0 rgba(255,255,255,.15);
+  width:100%; height:52px;
+  font-size:11px;
+  margin-top:6px;
+}
+
+.btn-danger{
+  color:#fca5a5;
+  background:rgba(239,68,68,.1);
+  border-color: rgba(239,68,68,.3);
+}
+.btn-danger:active{ background:rgba(239,68,68,.2); }
+
+.btn-secondary{
+  color:#fde047;
+  background:rgba(250,204,21,.08);
+  border-color: rgba(250,204,21,.2);
+}
+.btn-secondary:active{ background:rgba(250,204,21,.18); }
+
+.btn-row{
+  display:grid; grid-template-columns:1fr 1fr; gap:6px;
+  margin-top:6px;
+}
+.btn-row-2-1{ grid-template-columns: 2fr 1fr; }
+
+/* ========================================================= QR ========================================================= */
+.qr-container{
+  display:none;
+  margin-top:8px; padding:12px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(250,204,21,.2);
+  border-radius:12px;
+  text-align:center;
+}
+.qr-container.show{ display:block; }
+.qr-container canvas{
+  display:block; margin:0 auto;
+  border-radius:8px;
+  background:#fff;
+  padding:4px;
+}
+.qr-container p{
+  color:#94a3b8; font-size:8px; margin-top:8px;
+  font-weight:700; letter-spacing:.05em;
+}
+
+/* ========================================================= TERMINAL ========================================================= */
+.terminal{
+  border-radius:14px; overflow:hidden;
+  background:rgba(0,0,0,.42);
+  border:1px solid rgba(250,204,21,.15);
+  display:flex; flex-direction:column;
+  flex:1; min-height:0;
+}
+.terminal-head{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:7px 10px;
+  background:rgba(0,0,0,.3);
+  border-bottom:1px solid rgba(255,255,255,.04);
+  flex:0 0 auto;
+}
+.terminal-title{
+  display:flex; align-items:center; gap:7px;
+  font-size:7px; font-weight:800; letter-spacing:.15em;
+  color:#fde047; text-transform:uppercase;
+}
+.terminal-title .dot-live{
+  width:6px; height:6px; border-radius:50%;
+  background:#facc15; box-shadow: 0 0 6px #facc15;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+.terminal-actions{ display:flex; gap:4px; }
+.terminal-actions .icon-btn{
+  width:28px; height:28px; font-size:12px; border-radius:7px;
+}
+.terminal-body{
+  flex:1; min-height:0;
+  padding:8px 10px;
+  overflow-y:auto;
+  font-family:"Courier New",monospace;
+  font-size:10px; line-height:1.5;
+  color:#94a3b8;
+  -webkit-overflow-scrolling: touch;
+}
+.terminal-body::-webkit-scrollbar{ width:4px; }
+.terminal-body::-webkit-scrollbar-thumb{ background:rgba(250,204,21,.3); border-radius:2px; }
+.log-entry{ display:flex; gap:6px; align-items:baseline; padding:1px 0; }
+.log-time{ color:#475569; font-size:8px; flex-shrink:0; min-width:44px; }
+.log-msg{ word-break:break-word; font-size:10px; }
+.log-msg.info{ color:#cbd5e1; }
+.log-msg.success{ color:#4ade80; }
+.log-msg.error{ color:#f87171; }
+.log-msg.warn{ color:#fcd34d; }
+.log-msg.highlight{ color:#fde047; font-weight:700; }
+
+/* ========================================================= HISTORY ========================================================= */
+.history{
+  margin-top:8px;
+  background:rgba(0,0,0,.32);
+  border:1px solid rgba(255,255,255,.055);
+  border-radius:14px;
+  overflow:hidden;
+  flex:0 0 auto;
+  max-height:240px;
+  display:flex; flex-direction:column;
+}
+.history-head{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:9px 12px;
+  background:rgba(0,0,0,.2);
+  cursor:pointer; user-select:none;
+  flex:0 0 auto;
+}
+.history-head span:first-child{
+  font-size:7px; font-weight:800; letter-spacing:.15em;
+  color:#64748b; text-transform:uppercase;
+}
+.history-toggle{
+  color:#64748b; font-size:9px;
+  transition: transform .25s ease;
+}
+.history.open .history-toggle{ transform: rotate(90deg); }
+.history-body{
+  display:none;
+  padding:8px 10px;
+  max-height:180px; overflow-y:auto;
+  flex:1; min-height:0;
+}
+.history.open .history-body{ display:block; }
+.history-body::-webkit-scrollbar{ width:3px; }
+.history-body::-webkit-scrollbar-thumb{ background:rgba(250,204,21,.3); border-radius:2px; }
+.history-list{ display:flex; flex-direction:column; gap:6px; }
+.history-entry{
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+  padding:9px 11px; border-radius:10px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.05);
+  font-size:9px;
+}
+.history-entry .info{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-width:0; flex:1; }
+.history-entry .repo{ color:#e2e8f0; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px; }
+.history-entry .time{ color:#64748b; font-size:7px; font-variant-numeric:tabular-nums; }
+.history-entry .mode-badge{
+  font-size:6px; padding:2px 6px; border-radius:5px;
+  background:rgba(250,204,21,.12); border:1px solid rgba(250,204,21,.2);
+  color:#fde047; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+}
+.history-entry .dl-btn{
+  background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.25);
+  color:#86efac; border-radius:7px;
+  padding:5px 9px; font-size:7px; font-weight:800;
+  letter-spacing:.05em; text-transform:uppercase;
+  white-space:nowrap; flex-shrink:0;
+}
+.history-entry .dl-btn:active{ transform:scale(.94); background:rgba(34,197,94,.22); }
+.history-empty{
+  text-align:center; color:#475569; padding:20px 10px;
+  font-size:9px;
+}
+.history-clear{
+  width:100%; margin-top:6px;
+  height:30px; border-radius:8px;
+  background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.2);
+  color:#f87171; font-size:7px; font-weight:800;
+  letter-spacing:.06em; text-transform:uppercase;
+}
+.history-clear:active{ background:rgba(239,68,68,.15); }
+
+/* ========================================================= SHEET ========================================================= */
+.sheet-overlay{
+  position:fixed; inset:0; z-index:10000;
+  background:rgba(0,0,0,.6);
+  backdrop-filter:blur(6px);
+  opacity:0; pointer-events:none; transition:.25s ease;
+}
+.sheet-overlay.open{ opacity:1; pointer-events:auto; }
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:10001;
+  max-height:82dvh; min-height:40dvh;
+  background: linear-gradient(180deg, rgba(15,18,25,.98), rgba(10,12,18,.99));
+  border-top:1px solid rgba(255,255,255,.1);
+  border-radius:22px 22px 0 0;
+  box-shadow: 0 -20px 60px rgba(0,0,0,.7);
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  display:flex; flex-direction:column;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.sheet.open{ transform: translateY(0); }
+.sheet-handle{
+  width:44px; height:4px; border-radius:2px;
+  background:rgba(255,255,255,.2);
+  margin:10px auto 6px auto; flex:0 0 auto;
+}
+.sheet-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:4px 18px 12px 18px; flex:0 0 auto;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.sheet-head-left{ display:flex; align-items:center; gap:12px; }
+.sheet-icon{
+  width:42px; height:42px; border-radius:13px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(250,204,21,.1); border:1px solid rgba(250,204,21,.25);
+  font-size:18px;
+}
+.sheet-title{ font-size:13px; font-weight:800; color:#fef3c7; }
+.sheet-sub{ font-size:7px; text-transform:uppercase; letter-spacing:.16em; color:#a16207; font-weight:700; margin-bottom:2px; }
+.sheet-close{
+  width:44px; height:44px; border-radius:12px;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+  color:#94a3b8; font-size:18px;
+  display:flex; align-items:center; justify-content:center;
+}
+.sheet-close:active{ background:rgba(255,255,255,.1); color:#f8fafc; }
+.sheet-body{
+  flex:1; min-height:0; overflow-y:auto;
+  padding:14px 18px 18px 18px;
+}
+.info-list{ display:flex; flex-direction:column; gap:10px; }
+.info-item{
+  display:flex; align-items:flex-start; gap:12px;
+  padding:12px 14px; border-radius:13px;
+  background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.05);
+}
+.info-item-icon{
+  flex:0 0 36px; width:36px; height:36px; border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(250,204,21,.1); border:1px solid rgba(250,204,21,.2);
+  font-size:16px;
+}
+.info-item-body{ min-width:0; flex:1; }
+.info-item-title{ font-size:10px; font-weight:800; color:#e2e8f0; margin-bottom:3px; }
+.info-item-desc{ font-size:8.5px; color:#94a3b8; line-height:1.55; }
+.info-footer{
+  margin-top:16px; text-align:center;
+  font-size:7px; color:#475569; letter-spacing:.14em; text-transform:uppercase;
+}
+
+/* ========================================================= TOAST ========================================================= */
+.toast-container{
+  position:fixed; z-index:99999;
+  bottom:calc(20px + env(safe-area-inset-bottom));
+  left:12px; right:12px;
+  display:flex; flex-direction:column; gap:8px;
+  pointer-events:none;
+  max-width:660px; margin:0 auto;
+}
+.internal-toast{
+  pointer-events:auto;
+  padding:12px 14px; border-radius:12px;
+  background:rgba(15,23,42,.96);
+  border:1px solid rgba(250,204,21,.25);
+  border-left:4px solid #facc15;
+  color:#e2e8f0; font-size:10px; font-weight:700;
+  box-shadow: 0 15px 40px rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:space-between;
+  backdrop-filter:blur(18px);
+  animation: toastSlide .25s cubic-bezier(.175,.885,.32,1.275);
+}
+.internal-toast.success-toast{ border-left-color:#4ade80; border-color:rgba(74,222,128,.25); }
+.internal-toast.danger-toast{ border-left-color:#f87171; border-color:rgba(248,113,113,.25); }
+.internal-toast.warning-toast{ border-left-color:#fcd34d; border-color:rgba(250,204,21,.25); }
+@keyframes toastSlide{
+  from{ opacity:0; transform: translateY(20px) scale(.95); }
+  to{ opacity:1; transform: translateY(0) scale(1); }
+}
+
+.footer{
+  height:14px; min-height:14px; display:flex; align-items:center; justify-content:center;
+  color:#334155; font-size:6px; letter-spacing:.14em; text-transform:uppercase;
+  margin-top:4px; flex:0 0 auto;
+}
+
+/* ========================================================= MOBILE ========================================================= */
+@media (max-height:700px){
+  .header{ height:40px; min-height:40px; margin-bottom:4px; }
+  .brand-logo{ width:28px; height:28px; flex-basis:28px; }
+  .brand-name{ font-size:12px; }
+  .header-btn{ width:38px; height:38px; flex-basis:38px; font-size:13px; }
+  .field, .icon-btn{ height:38px; font-size:11px; }
+  .icon-btn{ width:38px; }
+  .btn-primary, .btn-success{ height:46px; font-size:10px; }
+  .code-editor{ min-height:120px; font-size:11px; }
+  .terminal-body{ font-size:9px; }
+  .log-msg{ font-size:9px; }
+  .footer{ display:none; }
+  .status-badge{ max-width:100px; }
+  .icon-preview{ width:52px; height:52px; flex-basis:52px; }
+}
+@media (max-width:380px){
+  .token-row{ grid-template-columns: minmax(0,1fr) 38px 38px 38px; }
+  .icon-btn{ width:38px; height:38px; }
+  .btn{ font-size:9px; }
+}
+@media (min-width:600px){
+  .app-inner{ max-width:720px; }
+}
+</style>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+
+<div class="aurora"><div class="orb"></div></div>
+<div class="noise"></div>
+
+<div class="app">
+  <div class="app-inner">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-logo"><span>A</span></div>
+        <div class="min-w-0">
+          <div class="brand-name">APKor</div>
+          <div class="brand-sub">Android Builder</div>
+        </div>
+        <div id="saveIndicator" class="save-indicator"></div>
+      </div>
+      <div class="header-right">
+        <div id="statusBadge" class="status-badge">
+          <span class="dot"></span>
+          <span id="statusBadgeText">PRÊT</span>
+        </div>
+        <button class="header-btn" onclick="openSheet('info')" aria-label="Info">ⓘ</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- CONFIG CARD -->
+      <section class="card glass glass-accent">
+        <div class="section-head">
+          <div>
+            <div class="section-title">Configuration</div>
+            <div class="section-name">Build Android</div>
+          </div>
+          <div class="section-badge accent" id="repoBadge">AUCUN</div>
+        </div>
+
+        <!-- TOGGLE MODE -->
+        <div class="mode-toggle" id="modeToggle">
+          <button class="mode-btn active" data-mode="repo" onclick="setMode('repo')">
+            <span>📦</span><span>Projet</span>
+          </button>
+          <button class="mode-btn" data-mode="direct" onclick="setMode('direct')">
+            <span>✏️</span><span>Code direct</span>
+          </button>
+        </div>
+
+        <!-- TOKEN ROW avec boutons d'aide -->
+        <div class="field-wrap">
+          <label class="field-label">🔑 Token GitHub (PAT)</label>
+          <div class="token-row">
+            <input id="ghToken" class="field token-color mono" type="password" placeholder="ghp_..." autocomplete="off" spellcheck="false">
+            <button class="icon-btn" onclick="toggleTokenView(this)" title="Voir/Cacher" aria-label="Voir/Cacher">👁</button>
+            <button class="icon-btn accent" onclick="pasteToken()" title="Coller" aria-label="Coller">📋</button>
+            <button class="icon-btn danger" onclick="clearToken()" title="Effacer" aria-label="Effacer">✕</button>
+          </div>
+          <div class="icon-warning visible" style="margin-top:5px;">
+            ⚠️ Stocké localement — ne pas utiliser sur un appareil partagé.
+          </div>
+        </div>
+
+        <!-- REPO ROW (mode projet) -->
+        <div class="field-wrap" id="repoField">
+          <label class="field-label">📂 Projet cible</label>
+          <div class="repo-wrap">
+            <div class="repo-input-row">
+              <input id="repoInput" class="field mono" type="text" placeholder="Colle ton token pour charger les projets..." disabled autocomplete="off" spellcheck="false">
+              <button class="icon-btn accent" id="refreshReposBtn" onclick="refreshRepos()" title="Rafraîchir" aria-label="Rafraîchir">⟳</button>
+            </div>
+            <div class="repo-dropdown" id="repoDropdown"></div>
+          </div>
+        </div>
+
+        <!-- CODE ROW (mode direct) -->
+        <div class="field-wrap" id="directField" style="display:none;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+            <label class="field-label" style="margin:0;">📄 Code HTML</label>
+            <button class="icon-btn-sm accent" onclick="pasteCode()" title="Coller">📋 COLLER</button>
+          </div>
+          <textarea id="codeInput" class="code-editor" placeholder="Colle ici ton code HTML monolithique..." spellcheck="false"></textarea>
+        </div>
+
+        <!-- ICON AREA -->
+        <div class="field-wrap">
+          <label class="field-label">🖼️ Icône de l'application</label>
+          <div class="icon-area">
+            <div class="icon-preview" id="iconPreview">🖼️</div>
+            <div class="icon-actions">
+              <div class="icon-btn-row">
+                <input type="file" id="iconInput" accept="image/*" style="display:none;">
+                <button class="icon-btn-sm accent" onclick="document.getElementById('iconInput').click()">🖼️ Choisir</button>
+                <button class="icon-btn-sm danger" onclick="clearIcon()" style="display:none;" id="clearIconBtn">✕ Supprimer</button>
+              </div>
+              <span class="icon-size-badge" id="iconSizeBadge"></span>
+            </div>
+          </div>
+          <div class="icon-warning" id="iconWarning">⚠️ Cette icône remplacera celle de la PWA (utilisée aussi pour l'installabilité).</div>
+        </div>
+
+        <!-- BUILD BUTTON XXL -->
+        <button id="buildBtn" class="btn btn-primary" onclick="triggerBuild()" disabled>
+          <span>🚀</span>
+          <span>LANCER LA COMPILATION</span>
+        </button>
+
+        <!-- ROW 2 boutons -->
+        <div class="btn-row btn-row-2-1">
+          <button id="cancelBtn" class="btn btn-danger" onclick="cancelBuild()" style="display:none;">
+            <span>🛑</span><span>ANNULER</span>
+          </button>
+          <button id="checkNowBtn" class="btn btn-secondary" onclick="manualCheck()" style="display:none;">
+            <span>🔄</span><span>VÉRIFIER</span>
+          </button>
+        </div>
+
+        <!-- DOWNLOAD -->
+        <button id="downloadBtn" class="btn btn-success" onclick="downloadAPK()" style="display:none;">
+          <span>⬇️</span>
+          <span>TÉLÉCHARGER L'APK</span>
+        </button>
+
+        <!-- QR -->
+        <div class="qr-container" id="qrContainer">
+          <canvas id="qrCanvas" width="150" height="150"></canvas>
+          <p>Scannez avec votre téléphone pour installer</p>
+        </div>
+      </section>
+
+      <!-- TERMINAL -->
+      <section class="terminal">
+        <div class="terminal-head">
+          <div class="terminal-title">
+            <span class="dot-live"></span>
+            <span>Logs temps réel</span>
+          </div>
+          <div class="terminal-actions">
+            <button class="icon-btn" onclick="copyLogs()" title="Copier">📋</button>
+            <button class="icon-btn danger" onclick="clearLogs()" title="Vider">✕</button>
+          </div>
+        </div>
+        <div class="terminal-body" id="terminalOutput">
+          <div class="log-entry">
+            <span class="log-time">--:--:--</span>
+            <span class="log-msg info">💡 Colle ton token GitHub pour commencer</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section class="history" id="historySection">
+        <div class="history-head" onclick="toggleHistory()">
+          <span>📜 Historique des builds</span>
+          <span class="history-toggle" id="historyToggleIcon">▶</span>
+        </div>
+        <div class="history-body">
+          <div class="history-list" id="historyList"></div>
+          <div class="history-empty" id="historyEmpty">Aucun historique pour le moment</div>
+          <button class="history-clear" id="clearHistoryBtn" onclick="clearHistory()" style="display:none;">
+            🗑️ Vider l'historique
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">APKor · Laiche Brahim · Paris · 2026</footer>
+  </div>
+</div>
+
+<!-- ========================================================= SHEET INFO ========================================================= -->
+<div class="sheet-overlay" id="infoOverlay" onclick="closeSheet('info')"></div>
+<div class="sheet" id="infoSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="sheet-head-left">
+      <div class="sheet-icon">ⓘ</div>
+      <div>
+        <div class="sheet-sub">Guide</div>
+        <div class="sheet-title">À propos d'APKor</div>
+      </div>
+    </div>
+    <button class="sheet-close" onclick="closeSheet('info')">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="info-list">
+      <div class="info-item">
+        <div class="info-item-icon">📦</div>
+        <div class="info-item-body">
+          <div class="info-item-title">Mode Projet</div>
+          <div class="info-item-desc">Choisis un dépôt GitHub existant. Le build utilise son <b>index.html</b> et ses ressources.</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-item-icon">✏️</div>
+        <div class="info-item-body">
+          <div class="info-item-title">Mode Code direct</div>
+          <div class="info-item-desc">Colle ton code HTML → il sera poussé dans le sandbox <b>testapk</b> puis compilé.</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-item-icon">🖼️</div>
+        <div class="info-item-body">
+          <div class="info-item-title">Icône personnalisée</div>
+          <div class="info-item-desc">Image convertie automatiquement en <b>PNG carré 1024×1024</b> et poussée dans le dépôt.</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-item-icon">🔐</div>
+        <div class="info-item-body">
+          <div class="info-item-title">Permissions auto</div>
+          <div class="info-item-desc">Le workflow détecte automatiquement <b>vibration, notifications, caméra, micro, géoloc</b> et injecte les permissions Android nécessaires.</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-item-icon">📱</div>
+        <div class="info-item-body">
+          <div class="info-item-title">QR Code</div>
+          <div class="info-item-desc">Scanne le QR pour télécharger l'APK directement sur ton téléphone.</div>
+        </div>
+      </div>
+    </div>
+    <div class="info-footer">Made by Brahim Laiche · 2026 · Paris</div>
+  </div>
+</div>
+
+<script>
+/* ========================================================= CONSTANTES ========================================================= */
+const WORKFLOW_FILENAME = 'build-apk.yml';
+const WORKFLOW_PATH = '.github/workflows/' + WORKFLOW_FILENAME;
+const BRIDGE_URL = 'https://raw.githubusercontent.com/mekeirish/APK-Creator/main/bridge.js';
+const SANDBOX_OWNER = 'mekeirish';
+const SANDBOX_REPO = 'testapk';
+const LS_KEYS = {
+  TOKEN: 'apkor_token',
+  HISTORY: 'apkor_history'
+};
+
+const byId = (id) => document.getElementById(id);
+
+/* ========================================================= STORAGE ========================================================= */
+const store = (() => {
+  const mem = {};
+  let ls = null;
+  try { ls = window.localStorage; ls.setItem('__ak_test', '1'); ls.removeItem('__ak_test'); }
+  catch (e) { ls = null; }
+  return {
+    getItem(k) { try { if (ls) return ls.getItem(k); } catch (e) {} return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+    setItem(k, v) { try { if (ls) { ls.setItem(k, v); return; } } catch (e) {} mem[k] = String(v); },
+    removeItem(k) { try { if (ls) ls.removeItem(k); } catch (e) {} delete mem[k]; }
+  };
+})();
+
+/* ========================================================= STATE ========================================================= */
+let reposMap = new Map();
+let currentOwner = '';
+let currentRepo = '';
+let currentBranch = 'main';
+let SANDBOX_DEFAULT_BRANCH = 'main';
+let pollingInterval = null;
+let directDownloadUrl = '#';
+let buildInProgress = false;
+let currentMode = 'repo';
+let currentRunId = null;
+let newIconData = null;
+let existingIconData = null;
+
+let currentPollToken = null;
+let currentPollOwner = null;
+let currentPollRepo = null;
+let currentPollDispatchDate = null;
+let currentPollTolerance = 10000;
+let currentPollAttempts = 0;
+let currentPollMaxAttempts = 90;
+let pollInFlight = false;
+
+let filteredRepos = [];
+let dropdownActiveIndex = -1;
+
+/* ========================================================= HAPTIC ========================================================= */
+function haptic(ms){ ms = ms || 8; try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+
+/* ========================================================= SAVE INDICATOR ========================================================= */
+let saveIndicatorTimer = null;
+function showSaveIndicator(){
+  const ind = byId('saveIndicator');
+  if(!ind) return;
+  ind.classList.add('show');
+  clearTimeout(saveIndicatorTimer);
+  saveIndicatorTimer = setTimeout(()=>{ ind.classList.remove('show'); }, 800);
+}
+
+/* ========================================================= TOAST ========================================================= */
+let toastContainer = null;
+function notify(msg, type) {
+  type = type || 'info';
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'internal-toast';
+  if (type === 'success') toast.classList.add('success-toast');
+  else if (type === 'danger') toast.classList.add('danger-toast');
+  else if (type === 'warning') toast.classList.add('warning-toast');
+  const icons = { success: '✓', danger: '⚠', warning: '⚡', info: '›' };
+  toast.innerHTML = '<span>' + (icons[type] || '›') + ' ' + escapeHtml(msg) + '</span>';
+  toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px) scale(0.95)';
+    toast.style.transition = '.25s ease';
+    setTimeout(() => toast.remove(), 250);
+  }, 3200);
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ========================================================= SHEETS ========================================================= */
+function openSheet(name) {
+  byId(name + 'Overlay').classList.add('open');
+  byId(name + 'Sheet').classList.add('open');
+  haptic(6);
+}
+function closeSheet(name) {
+  byId(name + 'Overlay').classList.remove('open');
+  byId(name + 'Sheet').classList.remove('open');
+}
+['info'].forEach(function(name){
+  var sheet = byId(name + 'Sheet');
+  if (!sheet) return;
+  var startY = 0, currentY = 0, dragging = false;
+  sheet.addEventListener('touchstart', function(e){
+    if (e.target.closest('.sheet-body')) return;
+    startY = e.touches[0].clientY;
+    dragging = true;
+    sheet.style.transition = 'none';
+  }, { passive: true });
+  sheet.addEventListener('touchmove', function(e){
+    if (!dragging) return;
+    currentY = e.touches[0].clientY - startY;
+    if (currentY > 0) sheet.style.transform = 'translateY(' + currentY + 'px)';
+  }, { passive: true });
+  sheet.addEventListener('touchend', function(){
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = '';
+    sheet.style.transform = '';
+    if (currentY > 100) closeSheet(name);
+    currentY = 0;
+  });
+});
+
+/* ========================================================= LOGS ========================================================= */
+function logMsg(msg, type) {
+  type = type || 'info';
+  var now = new Date();
+  var h = String(now.getHours()).padStart(2, '0');
+  var m = String(now.getMinutes()).padStart(2, '0');
+  var s = String(now.getSeconds()).padStart(2, '0');
+  var time = h + ':' + m + ':' + s;
+  var div = document.createElement('div');
+  div.className = 'log-entry';
+  var ts = document.createElement('span');
+  ts.className = 'log-time';
+  ts.textContent = time;
+  var ms = document.createElement('span');
+  ms.className = 'log-msg ' + type;
+  ms.textContent = msg;
+  div.appendChild(ts);
+  div.appendChild(ms);
+  var terminalOutput = byId('terminalOutput');
+  terminalOutput.appendChild(div);
+  while (terminalOutput.childNodes.length > 200) {
+    terminalOutput.removeChild(terminalOutput.firstChild);
+  }
+  terminalOutput.scrollTop = terminalOutput.scrollHeight;
+}
+
+async function copyLogs() {
+  var text = byId('terminalOutput').innerText;
+  try {
+    await navigator.clipboard.writeText(text);
+    logMsg('📋 Logs copiés', 'success');
+    notify('Logs copiés', 'success');
+  } catch(e) {
+    notify('Copie impossible', 'danger');
+  }
+}
+function clearLogs() {
+  byId('terminalOutput').innerHTML = '';
+  logMsg('🧹 Terminal nettoyé', 'warn');
+}
+
+/* ========================================================= STATUS ========================================================= */
+function setStatus(label, type) {
+  type = type || 'ready';
+  var badge = byId('statusBadge');
+  var txt = byId('statusBadgeText');
+  badge.classList.remove('ready','loading','success','error');
+  if (type === 'ready' || type === 'ok') badge.classList.add('ready');
+  else if (type === 'running' || type === 'loading') badge.classList.add('loading');
+  else if (type === 'success') badge.classList.add('success');
+  else if (type === 'error' || type === 'err') badge.classList.add('error');
+  txt.textContent = label || 'PRÊT';
+
+  if (type === 'running' || type === 'loading') {
+    byId('cancelBtn').style.display = 'flex';
+    byId('checkNowBtn').style.display = 'flex';
+  } else {
+    byId('cancelBtn').style.display = 'none';
+    byId('checkNowBtn').style.display = 'none';
+  }
+}
+function setRepoBadgeText(name) {
+  byId('repoBadge').textContent = name ? name.toUpperCase() : 'AUCUN';
+}
+
+/* ========================================================= TOKEN ========================================================= */
+function toggleTokenView(btn){
+  const input = byId('ghToken');
+  if (input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
+  else { input.type = 'password'; btn.textContent = '👁'; }
+}
+async function pasteToken(){
+  try {
+    const text = (await navigator.clipboard.readText()).trim();
+    if (!text) { notify('Presse-papier vide', 'danger'); return; }
+    byId('ghToken').value = text;
+    store.setItem(LS_KEYS.TOKEN, text);
+    showSaveIndicator();
+    notify('Token collé', 'success');
+    logMsg('📋 Token collé', 'info');
+    if (text.length > 20) verifyTokenAndLoadRepos(text);
+  } catch(e) { notify('Presse-papiers refusé', 'danger'); }
+}
+function clearToken(){
+  if (!byId('ghToken').value) return;
+  if (!confirm('Effacer le token sauvegardé ?')) return;
+  byId('ghToken').value = '';
+  store.removeItem(LS_KEYS.TOKEN);
+  reposMap.clear();
+  byId('repoInput').disabled = true;
+  byId('repoInput').placeholder = 'Colle ton token pour charger les projets...';
+  byId('buildBtn').disabled = true;
+  setRepoBadgeText('');
+  notify('Token effacé', 'warning');
+  logMsg('🗑 Token effacé', 'warn');
+}
+
+/* ========================================================= MODE ========================================================= */
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  if (mode === 'repo') {
+    byId('repoField').style.display = 'block';
+    byId('directField').style.display = 'none';
+    byId('codeInput').style.display = 'none';
+    if (reposMap.size > 0) {
+      byId('repoInput').disabled = false;
+      byId('repoInput').placeholder = 'Tape le nom du projet...';
+    } else {
+      byId('repoInput').disabled = true;
+      byId('repoInput').placeholder = 'Colle ton token pour charger les projets...';
+    }
+    currentRepo = '';
+    setRepoBadgeText('');
+    byId('buildBtn').disabled = true;
+  } else {
+    byId('repoField').style.display = 'none';
+    byId('directField').style.display = 'block';
+    byId('codeInput').style.display = 'block';
+    currentOwner = SANDBOX_OWNER;
+    currentRepo = SANDBOX_REPO;
+    var token = byId('ghToken').value.trim();
+    if (token.length > 20) fetchSandboxDefaultBranch(token);
+    setRepoBadgeText('testapk');
+    byId('buildBtn').disabled = !(token.length > 20);
+  }
+  byId('cancelBtn').style.display = 'none';
+  byId('checkNowBtn').style.display = 'none';
+  byId('qrContainer').classList.remove('show');
+  haptic(6);
+}
+
+async function fetchSandboxDefaultBranch(token) {
+  try {
+    var res = await fetch('https://api.github.com/repos/' + SANDBOX_OWNER + '/' + SANDBOX_REPO, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      var data = await res.json();
+      SANDBOX_DEFAULT_BRANCH = data.default_branch || 'main';
+      currentBranch = SANDBOX_DEFAULT_BRANCH;
+      logMsg('🔀 Branche sandbox : ' + currentBranch, 'info');
+    } else {
+      SANDBOX_DEFAULT_BRANCH = 'main';
+      currentBranch = 'main';
+    }
+  } catch(e) {
+    SANDBOX_DEFAULT_BRANCH = 'main';
+    currentBranch = 'main';
+  }
+}
+
+/* ========================================================= ICON ========================================================= */
+function displayIcon(dataURL, width, height) {
+  byId('iconPreview').innerHTML = '<img src="' + dataURL + '" alt="Icon">';
+  if (width && height) byId('iconSizeBadge').textContent = width + '×' + height + ' PNG';
+  else byId('iconSizeBadge').textContent = 'PNG';
+}
+function clearIcon() {
+  newIconData = null;
+  byId('iconInput').value = '';
+  if (existingIconData && existingIconData.dataURL) {
+    displayIcon(existingIconData.dataURL);
+    byId('iconSizeBadge').textContent = 'existant';
+  } else {
+    byId('iconPreview').innerHTML = '🖼️';
+    byId('iconSizeBadge').textContent = '';
+  }
+  byId('iconWarning').classList.remove('visible');
+  byId('clearIconBtn').style.display = 'none';
+  logMsg('🖼️ Icône supprimée', 'info');
+}
+function convertImageToSquarePNG(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        var size = 1024;
+        var canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, size, size);
+        var srcAspect = img.width / img.height;
+        var drawWidth, drawHeight, x, y;
+        if (srcAspect > 1) { drawHeight = size; drawWidth = size * srcAspect; x = (size - drawWidth) / 2; y = 0; }
+        else { drawWidth = size; drawHeight = size / srcAspect; x = 0; y = (size - drawHeight) / 2; }
+        ctx.drawImage(img, x, y, drawWidth, drawHeight);
+        var dataURL = canvas.toDataURL('image/png');
+        resolve({ dataURL: dataURL, width: size, height: size });
+      };
+      img.onerror = function() { reject(new Error('Image illisible')); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function() { reject(new Error('Lecture échouée')); };
+    reader.readAsDataURL(file);
+  });
+}
+byId('iconInput').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  logMsg('🖼️ Conversion icône...', 'info');
+  convertImageToSquarePNG(file).then(function(result) {
+    newIconData = result;
+    displayIcon(result.dataURL, result.width, result.height);
+    byId('iconWarning').classList.add('visible');
+    byId('clearIconBtn').style.display = 'flex';
+    logMsg('🖼️ PNG ' + result.width + '×' + result.height, 'success');
+    notify('Icône prête', 'success');
+  }).catch(function(err) {
+    logMsg('❌ ' + err.message, 'error');
+    notify(err.message, 'danger');
+    byId('iconInput').value = '';
+  });
+});
+
+async function fetchExistingIcon(token, owner, repo) {
+  try {
+    var res = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/contents/icon.png', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      var data = await res.json();
+      var binary = atob(data.content);
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      var blob = new Blob([bytes], { type: 'image/png' });
+      var dataURL = URL.createObjectURL(blob);
+      existingIconData = { dataURL: dataURL, sha: data.sha };
+      if (!newIconData) { displayIcon(dataURL); byId('iconSizeBadge').textContent = 'existant'; }
+      return true;
+    } else if (res.status === 404) {
+      existingIconData = null;
+      if (!newIconData) { byId('iconPreview').innerHTML = '🖼️'; byId('iconSizeBadge').textContent = ''; }
+      return false;
+    }
+  } catch(e) {
+    logMsg('⚠️ Icône existante indisponible', 'warn');
+    return false;
+  }
+}
+
+async function pushIconToRepo(token, owner, repo, iconData) {
+  if (!iconData || !iconData.dataURL) return false;
+  logMsg('📤 Envoi icône...', 'info');
+  try {
+    var base64 = iconData.dataURL.split(',')[1];
+    var sha = null;
+    var getRes = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/contents/icon.png', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (getRes.ok) { var d = await getRes.json(); sha = d.sha; }
+    else if (getRes.status !== 404) throw new Error('Erreur ' + getRes.status);
+
+    var body = { message: 'feat: icône depuis APKor', content: base64, branch: currentBranch };
+    if (sha) body.sha = sha;
+
+    var putRes = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/contents/icon.png', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!putRes.ok) { var err = await putRes.json(); throw new Error(err.message || 'Erreur ' + putRes.status); }
+    logMsg('🖼️ icon.png mis à jour', 'success');
+    return true;
+  } catch (err) {
+    logMsg('❌ Icône : ' + err.message, 'error');
+    return false;
+  }
+}
+
+/* ========================================================= YAML ========================================================= */
+function getYamlContent(repoName) {
+  const sanitizedId = repoName.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  return `name: Build APK Android
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Configuration Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configuration Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Construction de l'environnement PWA → APK
+        run: |
+          mkdir -p capacitor-app/www
+          rsync -av --exclude='capacitor-app' --exclude='.git' --exclude='.github' ./ capacitor-app/www/
+          cd capacitor-app
+          npm init -y
+          npm install @capacitor/core @capacitor/android @capacitor/haptics @capacitor/local-notifications
+          npm install -D @capacitor/cli
+          cat > capacitor.config.json << JSONEOF
+          {
+            "appId": "com.brahim.${sanitizedId}",
+            "appName": "${repoName}",
+            "webDir": "www",
+            "bundledWebRuntime": true
+          }
+          JSONEOF
+          npx cap init "${repoName}" "com.brahim.${sanitizedId}" --web-dir www
+          npx cap add android
+
+      - name: 🔐 Détection et injection automatique des permissions
+        run: |
+          cd capacitor-app/www
+          MANIFEST="../android/app/src/main/AndroidManifest.xml"
+          add_permission() {
+            local perm="$1"
+            if ! grep -q "android.permission.$perm" "$MANIFEST"; then
+              sed -i "/<manifest/a\\    <uses-permission android:name=\\"android.permission.$perm\\" />" "$MANIFEST"
+            fi
+          }
+          rm -f .need_*_shim
+          add_permission "INTERNET"
+          add_permission "ACCESS_NETWORK_STATE"
+          if grep -rq -E "passerAppelDirect" .; then add_permission "CALL_PHONE"; touch .need_call_shim; fi
+          if grep -rq -E "navigator\\.vibrate|\\.vibrate\\(" .; then add_permission "VIBRATE"; touch .need_vibrate_shim; fi
+          if grep -rq -E "navigator\\.geolocation|getCurrentPosition|watchPosition" .; then
+            add_permission "ACCESS_FINE_LOCATION"
+            add_permission "ACCESS_COARSE_LOCATION"
+            touch .need_geolocation_shim
+          fi
+          if grep -rq -E "getUserMedia.*video|video.*getUserMedia" .; then add_permission "CAMERA"; touch .need_camera_shim; fi
+          if grep -rq -E "getUserMedia.*audio|audio.*getUserMedia" .; then add_permission "RECORD_AUDIO"; touch .need_microphone_shim; fi
+          if grep -rq -E "new Notification\\(|Notification\\.requestPermission" .; then add_permission "POST_NOTIFICATIONS"; touch .need_notification_shim; fi
+
+      - name: 📱 Configuration du pont d'appel natif
+        run: |
+          if [ -f capacitor-app/www/.need_call_shim ]; then
+            cd capacitor-app
+            MAIN_ACTIVITY="android/app/src/main/java/com/brahim/${sanitizedId}/MainActivity.java"
+            cat > $MAIN_ACTIVITY << 'EOF'
+          package com.brahim.${sanitizedId};
+          import android.Manifest;
+          import android.content.Intent;
+          import android.content.pm.PackageManager;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.util.Log;
+          import android.webkit.WebView;
+          import androidx.core.app.ActivityCompat;
+          import androidx.core.content.ContextCompat;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+              private static final int REQUEST_CALL_PHONE = 1234;
+              private static final String TAG = "MainActivity";
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  WebView webView = this.bridge.getWebView();
+                  webView.addJavascriptInterface(new Object() {
+                      @android.webkit.JavascriptInterface
+                      public void passerAppelDirect(String phone) {
+                          if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CALL_PHONE)
+                                  != PackageManager.PERMISSION_GRANTED) {
+                              ActivityCompat.requestPermissions(MainActivity.this,
+                                      new String[]{Manifest.permission.CALL_PHONE},
+                                      REQUEST_CALL_PHONE);
+                              return;
+                          }
+                          try {
+                              Intent intent = new Intent(Intent.ACTION_CALL);
+                              intent.setData(Uri.parse("tel:" + phone));
+                              startActivity(intent);
+                          } catch (Exception e) { Log.e(TAG, "Échec", e); }
+                      }
+                  }, "AndroidBridge");
+              }
+              @Override
+              public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+                  super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+              }
+          }
+          EOF
+          fi
+
+      - name: 🌉 Injection des shims
+        run: |
+          cd capacitor-app/www
+          NEED_VIBRATE=false
+          NEED_NOTIFICATION=false
+          [ -f .need_vibrate_shim ] && NEED_VIBRATE=true
+          [ -f .need_notification_shim ] && NEED_NOTIFICATION=true
+          if [ "$NEED_VIBRATE" = "true" ] || [ "$NEED_NOTIFICATION" = "true" ]; then
+            cat > shims.js << 'SHIMEOF'
+          (function() {
+            var Capacitor = window.Capacitor;
+            console.log('🔌 Shims:', !!(Capacitor && Capacitor.Plugins) ? 'natif' : 'web');
+          })();
+          SHIMEOF
+            if [ "$NEED_VIBRATE" = "true" ]; then
+              cat >> shims.js << 'VIBEOF'
+          (function() {
+            var C = window.Capacitor;
+            if (C && C.Plugins && C.Plugins.Haptics) {
+              navigator.vibrate = function(p) {
+                var d = (typeof p === 'number') ? p : (Array.isArray(p) && p.length) ? p[0] : 200;
+                try { C.Plugins.Haptics.vibrate({ duration: d }); } catch(e) {}
+                return true;
+              };
+            }
+          })();
+          VIBEOF
+            fi
+            if [ "$NEED_NOTIFICATION" = "true" ]; then
+              cat >> shims.js << 'NOTIFEOF'
+          (function() {
+            var C = window.Capacitor;
+            if (C && C.Plugins && C.Plugins.LocalNotifications) {
+              C.Plugins.LocalNotifications.createChannel({
+                id: 'default', name: 'Notifications', importance: 5, visibility: 1
+              }).catch(function(){});
+              window.Notification = function(title, options) {
+                options = options || {};
+                C.Plugins.LocalNotifications.schedule({
+                  notifications: [{
+                    id: Math.floor(Math.random() * 2147483647),
+                    title: title || '',
+                    body: options.body || '',
+                    channelId: 'default',
+                    schedule: { at: new Date(Date.now() + 1000) }
+                  }]
+                }).catch(function(){});
+                return { close: function() {} };
+              };
+              window.Notification.requestPermission = function() {
+                return C.Plugins.LocalNotifications.requestPermissions().then(function(r) {
+                  return r.display === 'granted' ? 'granted' : 'denied';
+                });
+              };
+              window.Notification.permission = 'default';
+            }
+          })();
+          NOTIFEOF
+            fi
+          fi
+
+      - name: 🔌 Injection du Bridge
+        run: |
+          cd capacitor-app/www
+          MAIN_HTML=$(find . -maxdepth 1 -name "*.html" | head -n 1)
+          if [ -n "$MAIN_HTML" ]; then
+            curl -s -o bridge.js "${BRIDGE_URL}" || true
+            if [ -f "../node_modules/@capacitor/core/dist/capacitor.js" ]; then
+              cp ../node_modules/@capacitor/core/dist/capacitor.js capacitor.js
+            else
+              touch capacitor.js
+            fi
+            node -e "
+              const fs = require('fs');
+              const h = '\${MAIN_HTML}';
+              let c = fs.readFileSync(h, 'utf8');
+              let parts = c.split(/<\\/body>/i);
+              if (parts.length > 1) {
+                let last = parts.pop();
+                let s = '<script src=\"capacitor.js\"><\\/script>\\n';
+                if (fs.existsSync('shims.js')) s += '<script src=\"shims.js\"><\\/script>\\n';
+                s += '<script src=\"bridge.js\"><\\/script>\\n</body>';
+                fs.writeFileSync(h, parts.join('</body>') + s + last, 'utf8');
+              } else {
+                let a = '<script src=\"capacitor.js\"><\\/script>\\n';
+                if (fs.existsSync('shims.js')) a += '<script src=\"shims.js\"><\\/script>\\n';
+                a += '<script src=\"bridge.js\"><\\/script>\\n';
+                fs.appendFileSync(h, a);
+              }
+            "
+          fi
+
+      - name: 🔄 Sync assets Android
+        run: |
+          cd capacitor-app
+          npx cap sync android
+
+      - name: Génération icône
+        run: |
+          cd capacitor-app
+          npm install -D @capacitor/assets
+          mkdir -p assets
+          if [ -f "../icon.png" ]; then
+            cp ../icon.png assets/icon.png
+            npx @capacitor/assets generate --android
+          fi
+
+      - name: Résolution conflits Kotlin
+        run: |
+          echo "configurations.all { exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'; exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8' }" >> capacitor-app/android/app/build.gradle
+
+      - name: Compilation APK
+        run: |
+          cd capacitor-app/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Renommer APK
+        run: |
+          cd capacitor-app/android/app/build/outputs/apk/debug/
+          mv app-debug.apk ${repoName}-debug.apk
+
+      - name: Publication en Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "capacitor-app/android/app/build/outputs/apk/debug/${repoName}-debug.apk"
+          tag: "latest"
+          name: "${repoName} Latest Build"
+          allowUpdates: true
+          removeArtifacts: true
+          replacesArtifacts: true
+          prerelease: true
+          token: \${{ secrets.GITHUB_TOKEN }}`;
+}
+
+/* ========================================================= GITHUB REPOS ========================================================= */
+async function verifyTokenAndLoadRepos(token) {
+  logMsg('🔍 Vérification token...', 'info');
+  setStatus('CHARGEMENT...', 'loading');
+
+  try {
+    var all = [];
+    var url = 'https://api.github.com/user/repos?per_page=100&sort=updated&direction=desc&affiliation=owner,collaborator,organization_member';
+    var pageCount = 0;
+    while (url && pageCount < 20) {
+      pageCount++;
+      var res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) {
+        if (res.status === 401) throw new Error('Token invalide ou expiré');
+        if (res.status === 403) throw new Error('Rate limit atteint');
+        throw new Error('Erreur ' + res.status);
+      }
+      var data = await res.json();
+      if (Array.isArray(data)) data.forEach(function(r) { all.push(r); });
+      var link = res.headers.get('Link') || res.headers.get('link') || '';
+      url = null;
+      if (link) {
+        var m = link.match(/<([^>]+)>;\s*rel="next"/);
+        if (m) url = m[1];
+      }
+    }
+
+    reposMap.clear();
+    all.forEach(function(repo) { reposMap.set(repo.name.toLowerCase(), repo); });
+
+    store.setItem(LS_KEYS.TOKEN, token);
+    showSaveIndicator();
+    logMsg('✅ ' + reposMap.size + ' projets chargés', 'success');
+    setStatus('OK · ' + reposMap.size, 'success');
+
+    if (currentMode === 'repo') {
+      byId('repoInput').disabled = false;
+      byId('repoInput').placeholder = 'Tape le nom du projet...';
+      byId('repoInput').value = '';
+      byId('repoDropdown').classList.remove('open');
+      byId('buildBtn').disabled = true;
+      setRepoBadgeText('');
+    } else {
+      byId('buildBtn').disabled = false;
+      fetchSandboxDefaultBranch(token);
+    }
+  } catch (err) {
+    logMsg('❌ ' + err.message, 'error');
+    setStatus('ERREUR', 'error');
+    byId('repoInput').disabled = true;
+    byId('repoInput').placeholder = 'Token invalide';
+    byId('buildBtn').disabled = true;
+    notify(err.message, 'danger');
+  }
+}
+
+function refreshRepos(){
+  var token = byId('ghToken').value.trim();
+  if (!token || token.length < 20) {
+    notify('Token requis', 'warning');
+    return;
+  }
+  verifyTokenAndLoadRepos(token);
+}
+
+/* ========================================================= AUTOCOMPLETE REPO ========================================================= */
+function highlightMatch(name, query) {
+  if (!query) return escapeHtml(name);
+  const idx = name.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return escapeHtml(name);
+  return escapeHtml(name.slice(0, idx))
+    + '<span class="match-hl">' + escapeHtml(name.slice(idx, idx + query.length)) + '</span>'
+    + escapeHtml(name.slice(idx + query.length));
+}
+
+function openRepoDropdown() {
+  var dropdown = byId('repoDropdown');
+  var q = byId('repoInput').value.trim().toLowerCase();
+
+  if (reposMap.size === 0) {
+    dropdown.innerHTML = '<div class="repo-dropdown-empty">Colle un token valide pour charger tes dépôts</div>';
+    dropdown.classList.add('open');
+    return;
+  }
+
+  var all = [];
+  reposMap.forEach(function(r) { all.push(r); });
+
+  filteredRepos = q
+    ? all.filter(function(r) { return r.name.toLowerCase().includes(q); })
+    : all;
+
+  if (q) {
+    filteredRepos = filteredRepos.slice().sort(function(a, b) {
+      var aStarts = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+      var bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+      if (aStarts !== bStarts) return aStarts - bStarts;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  dropdownActiveIndex = filteredRepos.length > 0 ? 0 : -1;
+
+  if (filteredRepos.length === 0) {
+    dropdown.innerHTML = '<div class="repo-dropdown-empty">Aucun dépôt ne correspond</div>';
+  } else {
+    dropdown.innerHTML = filteredRepos.map(function(r, i) {
+      return '<div class="repo-option' + (i === dropdownActiveIndex ? ' active' : '') + '" data-idx="' + i + '">' +
+        '<span class="repo-option-name">' + highlightMatch(r.name, q) + '</span>' +
+        '<span class="repo-option-meta">' +
+          (r.private ? '<span class="repo-option-private">🔒</span>' : '') +
+          '<span class="repo-option-branch">' + escapeHtml(r.default_branch || 'main') + '</span>' +
+        '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  dropdown.classList.add('open');
+
+  dropdown.querySelectorAll('.repo-option').forEach(function(el) {
+    el.addEventListener('click', function() {
+      selectRepo(parseInt(el.dataset.idx, 10));
+    });
+  });
+}
+
+function updateDropdownActive(){
+  var dropdown = byId('repoDropdown');
+  var options = dropdown.querySelectorAll('.repo-option');
+  options.forEach(function(el, i) {
+    el.classList.toggle('active', i === dropdownActiveIndex);
+  });
+  var active = options[dropdownActiveIndex];
+  if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
+}
+
+function closeRepoDropdown(){
+  byId('repoDropdown').classList.remove('open');
+  dropdownActiveIndex = -1;
+}
+
+function selectRepo(idx){
+  if (idx < 0 || idx >= filteredRepos.length) return;
+  var repo = filteredRepos[idx];
+  byId('repoInput').value = repo.name;
+  closeRepoDropdown();
+  checkSelection();
+  haptic(8);
+}
+
+function checkSelection() {
+  if (currentMode !== 'repo') return;
+  var val = byId('repoInput').value.trim().toLowerCase();
+  if (reposMap.has(val)) {
+    var repo = reposMap.get(val);
+    currentOwner = repo.owner.login;
+    currentRepo = repo.name;
+    currentBranch = repo.default_branch;
+    byId('buildBtn').disabled = false;
+    setRepoBadgeText(repo.name);
+    logMsg('🎯 ' + repo.name + ' (' + currentBranch + ')', 'highlight');
+    var token = byId('ghToken').value.trim();
+    if (token.length > 20) fetchExistingIcon(token, currentOwner, currentRepo);
+  } else {
+    byId('buildBtn').disabled = true;
+    setRepoBadgeText('');
+  }
+}
+
+/* ========================================================= PASTE CODE ========================================================= */
+async function pasteCode() {
+  try {
+    var text = await navigator.clipboard.readText();
+    if (!text) { notify('Presse-papier vide', 'danger'); return; }
+    byId('codeInput').value = text;
+    logMsg('📋 Code collé (' + text.length + ' car.)', 'success');
+    notify('Code collé', 'success');
+  } catch(e) { notify('Presse-papiers refusé', 'danger'); }
+}
+
+/* ========================================================= HISTORY ========================================================= */
+function saveToHistory(repo, url, mode) {
+  try {
+    var history = JSON.parse(store.getItem(LS_KEYS.HISTORY)) || [];
+    history.unshift({ repo: repo, url: url, timestamp: new Date().toISOString(), mode: mode || currentMode });
+    if (history.length > 10) history = history.slice(0, 10);
+    store.setItem(LS_KEYS.HISTORY, JSON.stringify(history));
+    renderHistory();
+  } catch (e) {}
+}
+function loadHistory() {
+  try { return JSON.parse(store.getItem(LS_KEYS.HISTORY)) || []; } catch (e) { return []; }
+}
+function renderHistory() {
+  var history = loadHistory();
+  var list = byId('historyList');
+  var empty = byId('historyEmpty');
+  var clearBtn = byId('clearHistoryBtn');
+  list.innerHTML = '';
+  if (history.length === 0) {
+    empty.style.display = 'block';
+    clearBtn.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  clearBtn.style.display = 'block';
+  history.forEach(function(entry) {
+    var div = document.createElement('div');
+    div.className = 'history-entry';
+    var date = new Date(entry.timestamp);
+    var formatted = String(date.getDate()).padStart(2,'0') + '/' + String(date.getMonth()+1).padStart(2,'0') + ' ' + String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0');
+    div.innerHTML =
+      '<div class="info">' +
+        '<span class="repo">' + escapeHtml(entry.repo) + '</span>' +
+        '<span class="time">' + formatted + '</span>' +
+        '<span class="mode-badge">' + (entry.mode === 'direct' ? 'sandbox' : 'projet') + '</span>' +
+      '</div>' +
+      '<button class="dl-btn" data-url="' + escapeHtml(entry.url) + '">⬇ Télécharger</button>';
+    div.querySelector('.dl-btn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      window.open(entry.url, '_blank');
+      logMsg('📥 Téléchargement : ' + entry.repo, 'info');
+    });
+    list.appendChild(div);
+  });
+}
+function clearHistory() {
+  if (confirm('🗑️ Vider tout l\'historique ?')) {
+    store.removeItem(LS_KEYS.HISTORY);
+    renderHistory();
+    logMsg('🗑️ Historique vidé', 'warn');
+  }
+}
+function toggleHistory() {
+  var section = byId('historySection');
+  section.classList.toggle('open');
+  if (section.classList.contains('open')) renderHistory();
+}
+
+/* ========================================================= QR CODE ========================================================= */
+function generateQR(url) {
+  var qrCanvas = byId('qrCanvas');
+  if (!qrCanvas) return;
+  try {
+    if (typeof qrcode === 'undefined') {
+      logMsg('⚠️ qrcode non chargé', 'warn');
+      return;
+    }
+    var qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    var ctx = qrCanvas.getContext('2d');
+    var size = 150;
+    var cellSize = Math.floor(size / qr.getModuleCount());
+    qrCanvas.width = size;
+    qrCanvas.height = size;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    for (var row = 0; row < qr.getModuleCount(); row++) {
+      for (var col = 0; col < qr.getModuleCount(); col++) {
+        if (qr.isDark(row, col)) {
+          ctx.fillStyle = '#0b0d15';
+          ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+    byId('qrContainer').classList.add('show');
+    logMsg('📱 QR code généré', 'success');
+  } catch (e) {
+    logMsg('⚠️ Erreur QR : ' + e.message, 'warn');
+  }
+}
+
+/* ========================================================= BUILD POLLING ========================================================= */
+async function pollOnce() {
+  if (pollInFlight) return;
+  pollInFlight = true;
+  try {
+    if (!currentPollToken || !currentPollOwner || !currentPollRepo || !currentPollDispatchDate) return;
+
+    currentPollAttempts++;
+    if (currentPollAttempts > currentPollMaxAttempts) {
+      if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+      logMsg('⏱️ Délai dépassé', 'warn');
+      setStatus('TIMEOUT', 'error');
+      byId('buildBtn').disabled = false;
+      buildInProgress = false;
+      currentRunId = null;
+      currentPollToken = null;
+      currentPollOwner = null;
+      currentPollRepo = null;
+      currentPollDispatchDate = null;
+      currentPollAttempts = 0;
+      return;
+    }
+
+    try {
+      var res = await fetch(
+        'https://api.github.com/repos/' + currentPollOwner + '/' + currentPollRepo + '/actions/runs?event=workflow_dispatch&per_page=10',
+        { headers: { 'Authorization': 'Bearer ' + currentPollToken } }
+      );
+      if (!res.ok) return;
+      var data = await res.json();
+      if (!data.workflow_runs || data.workflow_runs.length === 0) {
+        logMsg('⏳ File d\'attente...', 'warn');
+        return;
+      }
+      var filteredRuns = data.workflow_runs.filter(function(run) {
+        var runDate = new Date(run.created_at);
+        return runDate.getTime() >= currentPollDispatchDate.getTime() - currentPollTolerance;
+      });
+      if (filteredRuns.length === 0) filteredRuns = [data.workflow_runs[0]];
+      var run = filteredRuns[0];
+      currentRunId = run.id;
+      var status = run.status;
+      var conclusion = run.conclusion;
+
+      if (status === 'queued') {
+        logMsg('⏳ File d\'attente...', 'warn');
+      } else if (status === 'in_progress') {
+        logMsg('🔧 Compilation...', 'info');
+        setStatus('BUILD...', 'loading');
+      } else if (status === 'completed') {
+        if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+        byId('buildBtn').disabled = false;
+        buildInProgress = false;
+        currentRunId = null;
+        var completedRepo = currentPollRepo;
+        var completedOwner = currentPollOwner;
+        currentPollToken = null;
+        currentPollOwner = null;
+        currentPollRepo = null;
+        currentPollDispatchDate = null;
+        currentPollAttempts = 0;
+
+        if (conclusion === 'success') {
+          logMsg('✅ Build réussi !', 'success');
+          setStatus('SUCCÈS', 'success');
+          var url = 'https://github.com/' + completedOwner + '/' + completedRepo + '/releases/download/latest/' + completedRepo + '-debug.apk';
+          directDownloadUrl = url;
+          byId('downloadBtn').style.display = 'flex';
+          generateQR(url);
+          saveToHistory(completedRepo, url, currentMode);
+          notify('APK prêt !', 'success');
+        } else {
+          logMsg('❌ Échec (' + conclusion + ')', 'error');
+          setStatus('ÉCHEC', 'error');
+          notify('Build échoué', 'danger');
+        }
+      }
+    } catch (e) {}
+  } finally {
+    pollInFlight = false;
+  }
+}
+
+function startPolling(token, pollOwner, pollRepo, dispatchTimestamp) {
+  if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+  currentPollToken = token;
+  currentPollOwner = pollOwner;
+  currentPollRepo = pollRepo;
+  currentPollDispatchDate = new Date(dispatchTimestamp);
+  currentPollAttempts = 0;
+  pollingInterval = setInterval(function() { pollOnce(); }, 8000);
+}
+
+function manualCheck() {
+  if (!buildInProgress) { logMsg('⚠️ Aucun build en cours', 'warn'); return; }
+  logMsg('🔄 Vérification manuelle...', 'info');
+  pollOnce();
+}
+
+/* ========================================================= PUSH CODE SANDBOX ========================================================= */
+async function pushCodeToSandbox(token, code) {
+  logMsg('📤 Envoi code vers sandbox...', 'info');
+  try {
+    var sha = null;
+    var getRes = await fetch('https://api.github.com/repos/' + SANDBOX_OWNER + '/' + SANDBOX_REPO + '/contents/index.html', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (getRes.ok) { var d = await getRes.json(); sha = d.sha; }
+    else if (getRes.status !== 404) { var e = await getRes.json(); throw new Error(e.message || 'Erreur'); }
+
+    var encoded = btoa(unescape(encodeURIComponent(code)));
+    var body = { message: 'feat: mise à jour depuis APKor (code direct)', content: encoded, branch: currentBranch };
+    if (sha) body.sha = sha;
+
+    var putRes = await fetch('https://api.github.com/repos/' + SANDBOX_OWNER + '/' + SANDBOX_REPO + '/contents/index.html', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!putRes.ok) { var err = await putRes.json(); throw new Error(err.message || 'Erreur'); }
+    logMsg('✅ index.html sandbox mis à jour', 'success');
+    return true;
+  } catch (err) {
+    logMsg('❌ ' + err.message, 'error');
+    throw err;
+  }
+}
+
+function utf8_to_b64(str) {
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+    return String.fromCharCode(parseInt(p1, 16));
+  }));
+}
+
+/* ========================================================= WORKFLOW ========================================================= */
+async function ensureWorkflowExists(token, targetOwner, targetRepo) {
+  logMsg('📄 Vérification workflow...', 'info');
+  var newYaml = getYamlContent(targetRepo);
+  var newEncoded = utf8_to_b64(newYaml);
+
+  var sha = null;
+  var fileExists = false;
+  try {
+    var getRes = await fetch('https://api.github.com/repos/' + targetOwner + '/' + targetRepo + '/contents/' + WORKFLOW_PATH, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (getRes.ok) {
+      var data = await getRes.json();
+      sha = data.sha;
+      fileExists = true;
+      var normalizedExisting = data.content.replace(/\n/g, '');
+      if (normalizedExisting === newEncoded) {
+        logMsg('✅ Workflow déjà à jour', 'success');
+        return true;
+      }
+    } else if (getRes.status !== 404) {
+      throw new Error('Erreur ' + getRes.status);
+    }
+  } catch (e) {
+    if (!e.message.includes('404')) throw e;
+  }
+
+  var body = { message: 'feat: workflow APKor', content: newEncoded, branch: currentBranch };
+  if (sha) body.sha = sha;
+
+  var putRes = await fetch('https://api.github.com/repos/' + targetOwner + '/' + targetRepo + '/contents/' + WORKFLOW_PATH, {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!putRes.ok) {
+    var errData = await putRes.json();
+    throw new Error(errData.message || 'Erreur ' + putRes.status);
+  }
+  logMsg('✅ Workflow mis à jour', 'success');
+
+  if (!fileExists) {
+    logMsg('⏳ Indexation...', 'warn');
+    await new Promise(function(r) { setTimeout(r, 3000); });
+  }
+  return true;
+}
+
+/* ========================================================= BUILD ========================================================= */
+async function triggerBuild() {
+  if (buildInProgress) return;
+
+  var token = byId('ghToken').value.trim();
+  if (!token || token.length < 20) {
+    logMsg('❌ Token invalide', 'error');
+    notify('Token invalide', 'danger');
+    return;
+  }
+
+  buildInProgress = true;
+  byId('buildBtn').disabled = true;
+  byId('downloadBtn').style.display = 'none';
+  byId('qrContainer').classList.remove('show');
+  directDownloadUrl = '#';
+  currentRunId = null;
+  haptic(12);
+
+  logMsg('═══════════════════', 'highlight');
+
+  try {
+    var targetOwner, targetRepo;
+
+    if (currentMode === 'direct') {
+      var code = byId('codeInput').value.trim();
+      if (!code) {
+        logMsg('❌ Aucun code HTML', 'error');
+        buildInProgress = false; byId('buildBtn').disabled = false;
+        return;
+      }
+      await pushCodeToSandbox(token, code);
+      targetOwner = SANDBOX_OWNER;
+      targetRepo = SANDBOX_REPO;
+      logMsg('🚀 Build sandbox : ' + targetRepo, 'highlight');
+    } else {
+      if (!currentRepo) {
+        logMsg('❌ Aucun projet sélectionné', 'error');
+        buildInProgress = false; byId('buildBtn').disabled = false;
+        return;
+      }
+      targetOwner = currentOwner;
+      targetRepo = currentRepo;
+      logMsg('🚀 Build : ' + targetRepo, 'highlight');
+    }
+
+    if (newIconData && newIconData.dataURL) {
+      logMsg('🖼️ Envoi nouvelle icône...', 'info');
+      await pushIconToRepo(token, targetOwner, targetRepo, newIconData);
+    }
+
+    setStatus('DÉMARRAGE...', 'loading');
+
+    await ensureWorkflowExists(token, targetOwner, targetRepo);
+
+    logMsg('📡 Envoi commande...', 'info');
+    var dispatchRes = null;
+    var maxAttempts = 5;
+    var attempt = 0;
+    while (attempt < maxAttempts) {
+      attempt++;
+      dispatchRes = await fetch(
+        'https://api.github.com/repos/' + targetOwner + '/' + targetRepo + '/actions/workflows/' + WORKFLOW_FILENAME + '/dispatches',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ ref: currentBranch })
+        }
+      );
+      if (dispatchRes.status === 204) break;
+      if (attempt >= maxAttempts) break;
+      var waitTime = 3000;
+      if (dispatchRes.status === 403 || dispatchRes.status === 429) {
+        var retryAfter = dispatchRes.headers.get('Retry-After');
+        if (retryAfter) {
+          var retrySeconds = parseInt(retryAfter, 10);
+          if (!isNaN(retrySeconds) && retrySeconds > 0) {
+            waitTime = Math.min(retrySeconds * 1000, 60000);
+          }
+        }
+      }
+      logMsg('⏳ Retentative ' + attempt + '/' + maxAttempts + '...', 'warn');
+      await new Promise(function(r) { setTimeout(r, waitTime); });
+    }
+
+    if (dispatchRes.status === 204) {
+      logMsg('✅ Commande envoyée', 'success');
+      setStatus('BUILD...', 'loading');
+      var dispatchTimestamp = new Date().toISOString();
+      setTimeout(function() { startPolling(token, targetOwner, targetRepo, dispatchTimestamp); }, 3000);
+    } else {
+      var err = await dispatchRes.json().catch(function() { return {}; });
+      throw new Error(err.message || 'Erreur ' + dispatchRes.status);
+    }
+
+  } catch (err) {
+    logMsg('❌ ' + err.message, 'error');
+    setStatus('ÉCHEC', 'error');
+    byId('buildBtn').disabled = false;
+    buildInProgress = false;
+    currentRunId = null;
+    notify(err.message, 'danger');
+  }
+}
+
+async function cancelBuild() {
+  if (!buildInProgress) { logMsg('⚠️ Aucun build en cours', 'warn'); return; }
+  var token = byId('ghToken').value.trim();
+  if (!token || token.length < 20) { logMsg('❌ Token invalide', 'error'); return; }
+
+  logMsg('🛑 Annulation...', 'warn');
+  if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+
+  if (currentRunId) {
+    try {
+      var cancelRes = await fetch(
+        'https://api.github.com/repos/' + currentOwner + '/' + currentRepo + '/actions/runs/' + currentRunId + '/cancel',
+        { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' } }
+      );
+      if (cancelRes.status === 202) logMsg('✅ Annulation demandée', 'success');
+      else logMsg('⚠️ Annulation impossible (' + cancelRes.status + ')', 'warn');
+    } catch (err) { logMsg('⚠️ ' + err.message, 'error'); }
+  }
+
+  buildInProgress = false;
+  byId('buildBtn').disabled = false;
+  currentRunId = null;
+  directDownloadUrl = '#';
+  byId('downloadBtn').style.display = 'none';
+  byId('qrContainer').classList.remove('show');
+  currentPollToken = null;
+  currentPollOwner = null;
+  currentPollRepo = null;
+  currentPollDispatchDate = null;
+  currentPollAttempts = 0;
+  pollInFlight = false;
+  setStatus('PRÊT', 'ready');
+  logMsg('🔄 Réinitialisé', 'info');
+}
+
+function downloadAPK() {
+  if (directDownloadUrl && directDownloadUrl !== '#') {
+    window.open(directDownloadUrl, '_blank');
+    logMsg('📲 Téléchargement lancé', 'success');
+  }
+}
+
+/* ========================================================= INIT ========================================================= */
+(function init() {
+  var saved = store.getItem(LS_KEYS.TOKEN);
+  if (saved) {
+    byId('ghToken').value = saved;
+    setTimeout(function() { verifyTokenAndLoadRepos(saved); }, 300);
+  }
+
+  setMode('repo');
+  renderHistory();
+
+  var tokenInput = byId('ghToken');
+  var tokenFetchTimer = null;
+  tokenInput.addEventListener('input', function(e) {
+    var token = e.target.value.trim();
+    store.setItem(LS_KEYS.TOKEN, token);
+    showSaveIndicator();
+    clearTimeout(tokenFetchTimer);
+    if (token.length > 20) {
+      tokenFetchTimer = setTimeout(function() { verifyTokenAndLoadRepos(token); }, 700);
+    } else {
+      reposMap.clear();
+      byId('repoInput').disabled = true;
+      byId('repoInput').placeholder = 'Colle ton token pour charger les projets...';
+      byId('buildBtn').disabled = true;
+      setRepoBadgeText('');
+    }
+  });
+  tokenInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') verifyTokenAndLoadRepos(tokenInput.value.trim());
+  });
+
+  var repoInput = byId('repoInput');
+  var repoDropdown = byId('repoDropdown');
+  repoInput.addEventListener('focus', function() {
+    if (currentMode === 'repo') openRepoDropdown();
+  });
+  repoInput.addEventListener('input', function() {
+    if (currentMode === 'repo') { openRepoDropdown(); checkSelection(); }
+  });
+  repoInput.addEventListener('keydown', function(e) {
+    var isOpen = repoDropdown.classList.contains('open');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen) { openRepoDropdown(); return; }
+      if (filteredRepos.length === 0) return;
+      dropdownActiveIndex = (dropdownActiveIndex + 1) % filteredRepos.length;
+      updateDropdownActive();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!isOpen) return;
+      if (filteredRepos.length === 0) return;
+      dropdownActiveIndex = (dropdownActiveIndex - 1 + filteredRepos.length) % filteredRepos.length;
+      updateDropdownActive();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isOpen && dropdownActiveIndex >= 0) selectRepo(dropdownActiveIndex);
+      else if (!byId('buildBtn').disabled) triggerBuild();
+    } else if (e.key === 'Escape') closeRepoDropdown();
+  });
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.repo-wrap')) closeRepoDropdown();
+  });
+
+  byId('codeInput').addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (!byId('buildBtn').disabled) triggerBuild();
+    }
+  });
+
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && buildInProgress && pollingInterval) pollOnce();
+  });
+
+  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  logMsg('🚀 APKor prêt', 'info');
+  logMsg('💡 Colle ton token GitHub pour commencer', 'info');
+  setStatus('PRÊT', 'ready');
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js').catch(function() {});
+    });
+  }
+})();
+
+/* ========================================================= GLOBAL EXPOSE ========================================================= */
+window.openSheet = openSheet;
+window.closeSheet = closeSheet;
+window.setMode = setMode;
+window.toggleTokenView = toggleTokenView;
+window.pasteToken = pasteToken;
+window.clearToken = clearToken;
+window.refreshRepos = refreshRepos;
+window.pasteCode = pasteCode;
+window.clearIcon = clearIcon;
+window.triggerBuild = triggerBuild;
+window.cancelBuild = cancelBuild;
+window.manualCheck = manualCheck;
+window.downloadAPK = downloadAPK;
+window.copyLogs = copyLogs;
+window.clearLogs = clearLogs;
+window.toggleHistory = toggleHistory;
+window.clearHistory = clearHistory;
+</script>
+</body>
+</html>
