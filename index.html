@@ -379,7 +379,7 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
     <div class="info-list">
       <div class="info-item"><div class="info-item-icon">📦</div><div class="info-item-body"><div class="info-item-title">Mode Projet</div><div class="info-item-desc">Choisis un dépôt GitHub existant.</div></div></div>
       <div class="info-item"><div class="info-item-icon">✏️</div><div class="info-item-body"><div class="info-item-title">Mode Code direct</div><div class="info-item-desc">Colle ton code HTML → sandbox <b>testapk</b>.</div></div></div>
-      <div class="info-item"><div class="info-item-icon">🔐</div><div class="info-item-body"><div class="info-item-title">Permissions natives</div><div class="info-item-desc">Le workflow laisse Capacitor gérer les permissions proprement.</div></div></div>
+      <div class="info-item"><div class="info-item-icon">🔐</div><div class="info-item-body"><div class="info-item-title">Permissions natives</div><div class="info-item-desc">Le workflow détecte les permissions multi-lignes.</div></div></div>
     </div>
     <div class="info-footer">Made by Brahim Laiche · 2026 · Paris</div>
   </div>
@@ -508,8 +508,8 @@ jobs:
             add_permission "ACCESS_COARSE_LOCATION"
             touch .need_geolocation_shim
           fi
-          if grep -rq -E "getUserMedia.*video|video.*getUserMedia" .; then add_permission "CAMERA"; touch .need_camera_shim; fi
-          if grep -rq -E "getUserMedia.*audio|audio.*getUserMedia" .; then
+          if grep -rq "getUserMedia" . && grep -rq -E "video\\s*:\\s*(true|\\{)" .; then add_permission "CAMERA"; touch .need_camera_shim; fi
+          if grep -rq "getUserMedia" . && grep -rq -E "audio\\s*:\\s*(true|\\{)" .; then
             add_permission "RECORD_AUDIO"
             add_permission "MODIFY_AUDIO_SETTINGS"
             add_permission "FOREGROUND_SERVICE"
@@ -558,11 +558,9 @@ jobs:
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   
-                  // Autoriser la lecture audio sans interaction obligatoire
                   WebView webView = this.bridge.getWebView();
                   webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
           
-                  // Demande native au démarrage (Ne casse pas Capacitor)
                   List<String> permissionsNeeded = new ArrayList<>();
                   
                   if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
