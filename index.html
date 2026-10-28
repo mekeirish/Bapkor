@@ -858,17 +858,10 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
         </div>
       </div>
       <div class="info-item">
-        <div class="info-item-icon">🔐</div>
+        <div class="info-item-icon">📡</div>
         <div class="info-item-body">
-          <div class="info-item-title">Permissions auto</div>
-          <div class="info-item-desc">Le workflow détecte automatiquement <b>vibration, notifications, caméra, micro, géoloc</b> et injecte les permissions Android nécessaires.</div>
-        </div>
-      </div>
-      <div class="info-item">
-        <div class="info-item-icon">📱</div>
-        <div class="info-item-body">
-          <div class="info-item-title">QR Code</div>
-          <div class="info-item-desc">Scanne le QR pour télécharger l'APK directement sur ton téléphone.</div>
+          <div class="info-item-title">Maintien en arrière-plan</div>
+          <div class="info-item-desc">Le workflow active automatiquement un <b>Foreground Service</b> natif pour que l'audio continue lorsque l'écran est éteint.</div>
         </div>
       </div>
     </div>
@@ -1316,6 +1309,7 @@ jobs:
           cd capacitor-app
           npm init -y
           npm install @capacitor/core @capacitor/android @capacitor/haptics @capacitor/local-notifications
+          npm install @capawesome-team/capacitor-android-foreground-service
           npm install -D @capacitor/cli
           cat > capacitor.config.json << JSONEOF
           {
@@ -1349,8 +1343,25 @@ jobs:
             touch .need_geolocation_shim
           fi
           if grep -rq -E "getUserMedia.*video|video.*getUserMedia" .; then add_permission "CAMERA"; touch .need_camera_shim; fi
-          if grep -rq -E "getUserMedia.*audio|audio.*getUserMedia" .; then add_permission "RECORD_AUDIO"; touch .need_microphone_shim; fi
+          if grep -rq -E "getUserMedia.*audio|audio.*getUserMedia" .; then
+            add_permission "RECORD_AUDIO"
+            add_permission "FOREGROUND_SERVICE"
+            add_permission "FOREGROUND_SERVICE_MICROPHONE"
+            add_permission "WAKE_LOCK"
+            touch .need_microphone_shim
+            touch .need_bg_service
+          fi
           if grep -rq -E "new Notification\\(|Notification\\.requestPermission" .; then add_permission "POST_NOTIFICATIONS"; touch .need_notification_shim; fi
+
+      - name: 🔧 Configuration Service Arrière-plan
+        run: |
+          cd capacitor-app
+          if [ -f www/.need_bg_service ]; then
+            MANIFEST="android/app/src/main/AndroidManifest.xml"
+            if ! grep -q "ForegroundService" "$MANIFEST"; then
+              sed -i '/<\\/application>/i \\        <service android:name="io.capawesome.capacitorjs.plugins.foregroundservice.ForegroundService" android:foregroundServiceType="microphone" android:exported="false" />' "$MANIFEST"
+            fi
+          fi
 
       - name: 📱 Configuration du pont d'appel natif
         run: |
@@ -1463,9 +1474,38 @@ jobs:
             fi
           fi
 
-      - name: 🔌 Injection du Bridge
+      - name: 🔌 Injection du Bridge et Background
         run: |
           cd capacitor-app/www
+          if [ -f .need_bg_service ]; then
+            cat > background.js << 'BGEOF'
+          (function() {
+            window.addEventListener('load', function() {
+              if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.ForegroundService) {
+                var FS = window.Capacitor.Plugins.ForegroundService;
+                FS.createNotificationChannel({
+                  id: 'talkie_channel',
+                  name: 'Talkie-Walkie Audio',
+                  importance: 5
+                }).catch(function(){}).then(function() {
+                  FS.startForegroundService({
+                    id: 1,
+                    title: 'Talkie-Walkie Actif',
+                    body: 'Communication en cours en arrière-plan...',
+                    notificationChannelId: 'talkie_channel',
+                    smallIcon: 'ic_launcher'
+                  }).then(function() {
+                    FS.acquireWakeLock({ tag: 'talkie', timeout: 0 }).catch(function(){});
+                  }).catch(function(e) {
+                    console.log("Erreur service premier plan:", e);
+                  });
+                });
+              }
+            });
+          })();
+          BGEOF
+          fi
+          
           MAIN_HTML=$(find . -maxdepth 1 -name "*.html" | head -n 1)
           if [ -n "$MAIN_HTML" ]; then
             curl -s -o bridge.js "${BRIDGE_URL}" || true
@@ -1483,11 +1523,13 @@ jobs:
                 let last = parts.pop();
                 let s = '<script src=\"capacitor.js\"><\\/script>\\n';
                 if (fs.existsSync('shims.js')) s += '<script src=\"shims.js\"><\\/script>\\n';
+                if (fs.existsSync('background.js')) s += '<script src=\"background.js\"><\\/script>\\n';
                 s += '<script src=\"bridge.js\"><\\/script>\\n</body>';
                 fs.writeFileSync(h, parts.join('</body>') + s + last, 'utf8');
               } else {
                 let a = '<script src=\"capacitor.js\"><\\/script>\\n';
                 if (fs.existsSync('shims.js')) a += '<script src=\"shims.js\"><\\/script>\\n';
+                if (fs.existsSync('background.js')) a += '<script src=\"background.js\"><\\/script>\\n';
                 a += '<script src=\"bridge.js\"><\\/script>\\n';
                 fs.appendFileSync(h, a);
               }
