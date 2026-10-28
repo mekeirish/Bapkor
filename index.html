@@ -285,6 +285,15 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
         </div>
 
         <div class="field-wrap">
+          <label class="field-label">🏷️ Nom de l'application</label>
+          <input id="appNameInput" class="field" type="text" placeholder="Mon Super Talkie" oninput="saveCustomAppInfo()">
+        </div>
+        <div class="field-wrap">
+          <label class="field-label">🆔 ID du package (sans espaces)</label>
+          <input id="appIdInput" class="field mono" type="text" placeholder="com.moi.monapp" oninput="saveCustomAppInfo()">
+        </div>
+
+        <div class="field-wrap">
           <label class="field-label">🖼️ Icône de l'application</label>
           <div class="icon-area">
             <div class="icon-preview" id="iconPreview">🖼️</div>
@@ -317,6 +326,11 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
         <button id="downloadBtn" class="btn btn-success" onclick="downloadAPK()" style="display:none;">
           <span>⬇️</span>
           <span>TÉLÉCHARGER L'APK</span>
+        </button>
+
+        <button id="logsBtn" class="btn btn-danger" onclick="openBuildLogs()" style="display:none; margin-top:6px;">
+          <span>📜</span>
+          <span>VOIR LES LOGS D'ERREUR</span>
         </button>
 
         <div class="qr-container" id="qrContainer">
@@ -379,7 +393,7 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
     <div class="info-list">
       <div class="info-item"><div class="info-item-icon">📦</div><div class="info-item-body"><div class="info-item-title">Mode Projet</div><div class="info-item-desc">Choisis un dépôt GitHub existant.</div></div></div>
       <div class="info-item"><div class="info-item-icon">✏️</div><div class="info-item-body"><div class="info-item-title">Mode Code direct</div><div class="info-item-desc">Colle ton code HTML → sandbox <b>testapk</b>.</div></div></div>
-      <div class="info-item"><div class="info-item-icon">🔐</div><div class="info-item-body"><div class="info-item-title">Permissions natives</div><div class="info-item-desc">Le workflow détecte les permissions multi-lignes.</div></div></div>
+      <div class="info-item"><div class="info-item-icon">🔐</div><div class="info-item-body"><div class="info-item-title">Signature</div><div class="info-item-desc">Ajoute tes secrets <b>KEYSTORE_BASE64</b> pour signer l'APK.</div></div></div>
     </div>
     <div class="info-footer">Made by Brahim Laiche · 2026 · Paris</div>
   </div>
@@ -391,7 +405,7 @@ const WORKFLOW_PATH = '.github/workflows/' + WORKFLOW_FILENAME;
 const BRIDGE_URL = 'https://raw.githubusercontent.com/mekeirish/APK-Creator/main/bridge.js';
 const SANDBOX_OWNER = 'mekeirish';
 const SANDBOX_REPO = 'testapk';
-const LS_KEYS = { TOKEN: 'apkor_token', HISTORY: 'apkor_history' };
+const LS_KEYS = { TOKEN: 'apkor_token', HISTORY: 'apkor_history', APP_NAME: 'apkor_app_name', APP_ID: 'apkor_app_id' };
 const byId = (id) => document.getElementById(id);
 const store = (() => { const mem={}; let ls=null; try { ls=window.localStorage; ls.setItem('__ak_test','1'); ls.removeItem('__ak_test'); } catch(e){ls=null;} return { getItem(k){try{if(ls)return ls.getItem(k);}catch(e){}return Object.prototype.hasOwnProperty.call(mem,k)?mem[k]:null;}, setItem(k,v){try{if(ls){ls.setItem(k,v);return;}}catch(e){}mem[k]=String(v);}, removeItem(k){try{if(ls)ls.removeItem(k);}catch(e){}delete mem[k];} }; })();
 
@@ -402,9 +416,11 @@ let currentBranch = 'main';
 let SANDBOX_DEFAULT_BRANCH = 'main';
 let pollingInterval = null;
 let directDownloadUrl = '#';
+let buildLogsUrl = '#';
 let buildInProgress = false;
 let currentMode = 'repo';
 let currentRunId = null;
+let currentRunNumber = 1;
 let newIconData = null;
 let existingIconData = null;
 let currentPollToken = null, currentPollOwner = null, currentPollRepo = null, currentPollDispatchDate = null, currentPollTolerance = 10000, currentPollAttempts = 0, currentPollMaxAttempts = 90, pollInFlight = false;
@@ -431,6 +447,12 @@ function toggleTokenView(btn){const input=byId('ghToken');if(input.type==='passw
 async function pasteToken(){try{const text=(await navigator.clipboard.readText()).trim();if(!text){notify('Presse-papier vide','danger');return;}byId('ghToken').value=text;store.setItem(LS_KEYS.TOKEN,text);showSaveIndicator();notify('Token collé','success');logMsg('📋 Token collé','info');if(text.length>20)verifyTokenAndLoadRepos(text);}catch(e){notify('Presse-papiers refusé','danger');}}
 function clearToken(){if(!byId('ghToken').value)return;if(!confirm('Effacer le token sauvegardé ?'))return;byId('ghToken').value='';store.removeItem(LS_KEYS.TOKEN);reposMap.clear();byId('repoInput').disabled=true;byId('repoInput').placeholder='Colle ton token pour charger les projets...';byId('buildBtn').disabled=true;setRepoBadgeText('');notify('Token effacé','warning');logMsg('🗑 Token effacé','warn');}
 
+function saveCustomAppInfo(){
+  store.setItem(LS_KEYS.APP_NAME, byId('appNameInput').value.trim());
+  store.setItem(LS_KEYS.APP_ID, byId('appIdInput').value.trim());
+  showSaveIndicator();
+}
+
 function setMode(mode){currentMode=mode;document.querySelectorAll('.mode-btn').forEach(function(btn){btn.classList.toggle('active',btn.dataset.mode===mode);});if(mode==='repo'){byId('repoField').style.display='block';byId('directField').style.display='none';byId('codeInput').style.display='none';if(reposMap.size>0){byId('repoInput').disabled=false;byId('repoInput').placeholder='Tape le nom du projet...';}else{byId('repoInput').disabled=true;byId('repoInput').placeholder='Colle ton token pour charger les projets...';}currentRepo='';setRepoBadgeText('');byId('buildBtn').disabled=true;}else{byId('repoField').style.display='none';byId('directField').style.display='block';byId('codeInput').style.display='block';currentOwner=SANDBOX_OWNER;currentRepo=SANDBOX_REPO;var token=byId('ghToken').value.trim();if(token.length>20)fetchSandboxDefaultBranch(token);setRepoBadgeText('testapk');byId('buildBtn').disabled=!(token.length>20);}byId('cancelBtn').style.display='none';byId('checkNowBtn').style.display='none';byId('qrContainer').classList.remove('show');haptic(6);}
 async function fetchSandboxDefaultBranch(token){try{var res=await fetch('https://api.github.com/repos/'+SANDBOX_OWNER+'/'+SANDBOX_REPO,{headers:{'Authorization':'Bearer '+token}});if(res.ok){var data=await res.json();SANDBOX_DEFAULT_BRANCH=data.default_branch||'main';currentBranch=SANDBOX_DEFAULT_BRANCH;logMsg('🔀 Branche sandbox : '+currentBranch,'info');}else{SANDBOX_DEFAULT_BRANCH='main';currentBranch='main';}}catch(e){SANDBOX_DEFAULT_BRANCH='main';currentBranch='main';}}
 
@@ -441,7 +463,7 @@ byId('iconInput').addEventListener('change',function(e){var file=e.target.files[
 async function fetchExistingIcon(token,owner,repo){try{var res=await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/contents/icon.png',{headers:{'Authorization':'Bearer '+token}});if(res.ok){var data=await res.json();var binary=atob(data.content);var bytes=new Uint8Array(binary.length);for(var i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);var blob=new Blob([bytes],{type:'image/png'});var dataURL=URL.createObjectURL(blob);existingIconData={dataURL:dataURL,sha:data.sha};if(!newIconData){displayIcon(dataURL);byId('iconSizeBadge').textContent='existant';}return true;}else if(res.status===404){existingIconData=null;if(!newIconData){byId('iconPreview').innerHTML='🖼️';byId('iconSizeBadge').textContent='';}return false;}}catch(e){logMsg('⚠️ Icône existante indisponible','warn');return false;}}
 async function pushIconToRepo(token,owner,repo,iconData){if(!iconData||!iconData.dataURL)return false;logMsg('📤 Envoi icône...','info');try{var base64=iconData.dataURL.split(',')[1];var sha=null;var getRes=await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/contents/icon.png',{headers:{'Authorization':'Bearer '+token}});if(getRes.ok){var d=await getRes.json();sha=d.sha;}else if(getRes.status!==404)throw new Error('Erreur '+getRes.status);var body={message:'feat: icône depuis APKor',content:base64,branch:currentBranch};if(sha)body.sha=sha;var putRes=await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/contents/icon.png',{method:'PUT',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!putRes.ok){var err=await putRes.json();throw new Error(err.message||'Erreur '+putRes.status);}logMsg('🖼️ icon.png mis à jour','success');return true;}catch(err){logMsg('❌ Icône : '+err.message,'error');return false;}}
 
-function getYamlContent(repoName) {
+function getYamlContent(repoName, appName, appId) {
   const sanitizedId = repoName.toLowerCase().replace(/[^a-z0-9_]/g, '');
   return `name: Build APK Android
 on:
@@ -468,6 +490,17 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
+      - name: Cache Gradle et NPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.npm
+          key: \${{ runner.os }}-build-\${{ hashFiles('**/*.gradle*', '**/package-lock.json') }}
+          restore-keys: |
+            \${{ runner.os }}-build-
+
       - name: Construction de l'environnement PWA → APK
         run: |
           mkdir -p capacitor-app/www
@@ -479,13 +512,13 @@ jobs:
           npm install -D @capacitor/cli
           cat > capacitor.config.json << JSONEOF
           {
-            "appId": "com.brahim.${sanitizedId}",
-            "appName": "${repoName}",
+            "appId": "${appId}",
+            "appName": "${appName}",
             "webDir": "www",
             "bundledWebRuntime": true
           }
           JSONEOF
-          npx cap init "${repoName}" "com.brahim.${sanitizedId}" --web-dir www
+          npx cap init "${appName}" "${appId}" --web-dir www
           npx cap add android
 
       - name: 🔐 Détection et injection automatique des permissions
@@ -528,17 +561,34 @@ jobs:
           cd capacitor-app
           if [ -f www/.need_bg_service ]; then
             MANIFEST="android/app/src/main/AndroidManifest.xml"
-            if ! grep -q "ForegroundService" "$MANIFEST"; then
-              sed -i '/<\\/application>/i \\        <service android:name="io.capawesome.capacitorjs.plugins.foregroundservice.ForegroundService" android:foregroundServiceType="microphone" android:exported="false" />' "$MANIFEST"
+            if ! grep -q "AndroidForegroundService" "$MANIFEST"; then
+              sed -i '/<\\/application>/i \\        <receiver android:name="io.capawesome.capacitorjs.plugins.foregroundservice.NotificationActionBroadcastReceiver" />\\n        <service android:name="io.capawesome.capacitorjs.plugins.foregroundservice.AndroidForegroundService" android:foregroundServiceType="microphone" android:exported="false" />' "$MANIFEST"
             fi
           fi
 
       - name: 📱 Configuration des permissions natives (MainActivity)
         run: |
           cd capacitor-app
-          MAIN_ACTIVITY="android/app/src/main/java/com/brahim/${sanitizedId}/MainActivity.java"
-          cat > $MAIN_ACTIVITY << 'EOF'
-          package com.brahim.${sanitizedId};
+          MAIN_ACTIVITY="android/app/src/main/java/${appId.replace(/\./g, '/')}/MainActivity.java"
+          
+          REQ_CODE=""
+          if [ -f www/.need_microphone_shim ]; then
+            REQ_CODE="$REQ_CODE
+                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                      permissionsNeeded.add(Manifest.permission.RECORD_AUDIO);
+                  }"
+          fi
+          if [ -f www/.need_notification_shim ]; then
+            REQ_CODE="$REQ_CODE
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                          permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS);
+                      }
+                  }"
+          fi
+
+          cat > $MAIN_ACTIVITY << EOF
+          package ${appId};
           
           import android.Manifest;
           import android.content.pm.PackageManager;
@@ -562,17 +612,8 @@ jobs:
                   webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
           
                   List<String> permissionsNeeded = new ArrayList<>();
+                  \${REQ_CODE}
                   
-                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                      permissionsNeeded.add(Manifest.permission.RECORD_AUDIO);
-                  }
-                  
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                          permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS);
-                      }
-                  }
-          
                   if (!permissionsNeeded.isEmpty()) {
                       ActivityCompat.requestPermissions(this, permissionsNeeded.toArray(new String[0]), PERMISSION_REQUEST_CODE);
                   }
@@ -647,35 +688,50 @@ jobs:
           if [ -f .need_bg_service ]; then
             cat > background.js << 'BGEOF'
           (function() {
-            window.addEventListener('load', function() {
-              if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.ForegroundService) {
-                var FS = window.Capacitor.Plugins.ForegroundService;
-                FS.createNotificationChannel({
+            var started = false;
+            function startService() {
+              var C = window.Capacitor;
+              if (started || !C || !C.Plugins || !C.Plugins.ForegroundService) return;
+              started = true;
+              var FS = C.Plugins.ForegroundService;
+              FS.requestPermissions().catch(function(){}).then(function() {
+                return FS.createNotificationChannel({
                   id: 'talkie_channel',
                   name: 'Talkie-Walkie Audio',
-                  importance: 5
-                }).catch(function(){}).then(function() {
-                  FS.startForegroundService({
-                    id: 1,
-                    title: 'Talkie-Walkie Actif',
-                    body: 'Communication en cours en arrière-plan...',
-                    notificationChannelId: 'talkie_channel',
-                    smallIcon: 'ic_launcher'
-                  }).then(function() {
-                    FS.acquireWakeLock({ tag: 'talkie', timeout: 0 }).catch(function(){});
-                  }).catch(function(e) {
-                    console.log("Erreur service premier plan:", e);
-                  });
+                  importance: 3
+                }).catch(function(){});
+              }).then(function() {
+                return FS.startForegroundService({
+                  id: 1,
+                  title: 'Talkie-Walkie Actif',
+                  body: 'Communication en cours en arrière-plan...',
+                  notificationChannelId: 'talkie_channel',
+                  smallIcon: 'ic_launcher'
                 });
-              }
-            });
+              }).then(function() {
+                FS.acquireWakeLock({ tag: 'talkie', timeout: 0 }).catch(function(){});
+              }).catch(function(e) {
+                started = false;
+                console.log("Erreur service premier plan:", e);
+              });
+            }
+            var md = navigator.mediaDevices;
+            if (md && md.getUserMedia) {
+              var orig = md.getUserMedia.bind(md);
+              md.getUserMedia = function(c) {
+                return orig(c).then(function(s) {
+                  if (c && c.audio) startService();
+                  return s;
+                });
+              };
+            }
           })();
           BGEOF
           fi
           
           MAIN_HTML=$(find . -maxdepth 1 -name "*.html" | head -n 1)
           if [ -n "$MAIN_HTML" ]; then
-            curl -s -o bridge.js "${BRIDGE_URL}" || true
+            curl -f -s -o bridge.js "${BRIDGE_URL}"
             if [ -f "../node_modules/@capacitor/core/dist/capacitor.js" ]; then
               cp ../node_modules/@capacitor/core/dist/capacitor.js capacitor.js
             else
@@ -718,6 +774,33 @@ jobs:
             npx @capacitor/assets generate --android
           fi
 
+      - name: Versioning et Signature
+        run: |
+          cd capacitor-app/android/app
+          sed -i "s/versionCode 1/versionCode \${{ github.run_number }}/g" build.gradle
+          
+          if [ -n "\${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "\${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+            cat >> build.gradle << EOF
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file("release.keystore")
+                      storePassword "\${{ secrets.KEYSTORE_PASSWORD }}"
+                      keyAlias "\${{ secrets.KEY_ALIAS }}"
+                      keyPassword "\${{ secrets.KEY_PASSWORD }}"
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                  }
+              }
+          }
+          EOF
+          fi
+
       - name: Résolution conflits Kotlin
         run: |
           echo "configurations.all { exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'; exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8' }" >> capacitor-app/android/app/build.gradle
@@ -726,22 +809,28 @@ jobs:
         run: |
           cd capacitor-app/android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          if [ -n "\${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            ./gradlew assembleRelease
+          else
+            ./gradlew assembleDebug
+          fi
 
       - name: Renommer APK
         run: |
-          cd capacitor-app/android/app/build/outputs/apk/debug/
-          mv app-debug.apk ${repoName}-debug.apk
+          cd capacitor-app/android/app/build/outputs/apk/
+          if [ -d "release" ]; then
+            mv release/app-release.apk ../../../../../${repoName}.apk
+          else
+            mv debug/app-debug.apk ../../../../../${repoName}.apk
+          fi
 
       - name: Publication en Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "capacitor-app/android/app/build/outputs/apk/debug/${repoName}-debug.apk"
-          tag: "latest"
-          name: "${repoName} Latest Build"
-          allowUpdates: true
-          removeArtifacts: true
-          replacesArtifacts: true
+          artifacts: "capacitor-app/${repoName}.apk"
+          tag: "v\${{ github.run_number }}"
+          name: "${repoName} v\${{ github.run_number }}"
+          allowUpdates: false
           prerelease: true
           token: \${{ secrets.GITHUB_TOKEN }}`;
 }
@@ -754,7 +843,7 @@ function openRepoDropdown(){var dropdown=byId('repoDropdown');var q=byId('repoIn
 function updateDropdownActive(){var dropdown=byId('repoDropdown');var options=dropdown.querySelectorAll('.repo-option');options.forEach(function(el,i){el.classList.toggle('active',i===dropdownActiveIndex);});var active=options[dropdownActiveIndex];if(active&&active.scrollIntoView)active.scrollIntoView({block:'nearest'});}
 function closeRepoDropdown(){byId('repoDropdown').classList.remove('open');dropdownActiveIndex=-1;}
 function selectRepo(idx){if(idx<0||idx>=filteredRepos.length)return;var repo=filteredRepos[idx];byId('repoInput').value=repo.name;closeRepoDropdown();checkSelection();haptic(8);}
-function checkSelection(){if(currentMode!=='repo')return;var val=byId('repoInput').value.trim().toLowerCase();if(reposMap.has(val)){var repo=reposMap.get(val);currentOwner=repo.owner.login;currentRepo=repo.name;currentBranch=repo.default_branch;byId('buildBtn').disabled=false;setRepoBadgeText(repo.name);logMsg('🎯 '+repo.name+' ('+currentBranch+')','highlight');var token=byId('ghToken').value.trim();if(token.length>20)fetchExistingIcon(token,currentOwner,currentRepo);}else{byId('buildBtn').disabled=true;setRepoBadgeText('');}}
+function checkSelection(){if(currentMode!=='repo')return;var val=byId('repoInput').value.trim().toLowerCase();if(reposMap.has(val)){var repo=reposMap.get(val);currentOwner=repo.owner.login;currentRepo=repo.name;currentBranch=repo.default_branch;byId('buildBtn').disabled=false;setRepoBadgeText(repo.name);byId('appNameInput').value=repo.name;byId('appIdInput').value='com.brahim.'+repo.name.toLowerCase().replace(/[^a-z0-9_]/g, '');logMsg('🎯 '+repo.name+' ('+currentBranch+')','highlight');var token=byId('ghToken').value.trim();if(token.length>20)fetchExistingIcon(token,currentOwner,currentRepo);}else{byId('buildBtn').disabled=true;setRepoBadgeText('');}}
 
 async function pasteCode(){try{var text=await navigator.clipboard.readText();if(!text){notify('Presse-papier vide','danger');return;}byId('codeInput').value=text;logMsg('📋 Code collé ('+text.length+' car.)','success');notify('Code collé','success');}catch(e){notify('Presse-papiers refusé','danger');}}
 
@@ -766,23 +855,69 @@ function toggleHistory(){var section=byId('historySection');section.classList.to
 
 function generateQR(url){var qrCanvas=byId('qrCanvas');if(!qrCanvas)return;try{if(typeof qrcode==='undefined'){logMsg('⚠️ qrcode non chargé','warn');return;}var qr=qrcode(0,'M');qr.addData(url);qr.make();var ctx=qrCanvas.getContext('2d');var size=150;var cellSize=Math.floor(size/qr.getModuleCount());qrCanvas.width=size;qrCanvas.height=size;ctx.fillStyle='#ffffff';ctx.fillRect(0,0,size,size);for(var row=0;row<qr.getModuleCount();row++){for(var col=0;col<qr.getModuleCount();col++){if(qr.isDark(row,col)){ctx.fillStyle='#0b0d15';ctx.fillRect(col*cellSize,row*cellSize,cellSize,cellSize);}}}byId('qrContainer').classList.add('show');logMsg('📱 QR code généré','success');}catch(e){logMsg('⚠️ Erreur QR : '+e.message,'warn');}}
 
-async function pollOnce(){if(pollInFlight)return;pollInFlight=true;try{if(!currentPollToken||!currentPollOwner||!currentPollRepo||!currentPollDispatchDate)return;currentPollAttempts++;if(currentPollAttempts>currentPollMaxAttempts){if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}logMsg('⏱️ Délai dépassé','warn');setStatus('TIMEOUT','error');byId('buildBtn').disabled=false;buildInProgress=false;currentRunId=null;currentPollToken=null;currentPollOwner=null;currentPollRepo=null;currentPollDispatchDate=null;currentPollAttempts=0;return;}try{var res=await fetch('https://api.github.com/repos/'+currentPollOwner+'/'+currentPollRepo+'/actions/runs?event=workflow_dispatch&per_page=10',{headers:{'Authorization':'Bearer '+currentPollToken}});if(!res.ok)return;var data=await res.json();if(!data.workflow_runs||data.workflow_runs.length===0){logMsg('⏳ File d\'attente...','warn');return;}var filteredRuns=data.workflow_runs.filter(function(run){var runDate=new Date(run.created_at);return runDate.getTime()>=currentPollDispatchDate.getTime()-currentPollTolerance;});if(filteredRuns.length===0)filteredRuns=[data.workflow_runs[0]];var run=filteredRuns[0];currentRunId=run.id;var status=run.status;var conclusion=run.conclusion;if(status==='queued'){logMsg('⏳ File d\'attente...','warn');}else if(status==='in_progress'){logMsg('🔧 Compilation...','info');setStatus('BUILD...','loading');}else if(status==='completed'){if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}byId('buildBtn').disabled=false;buildInProgress=false;currentRunId=null;var completedRepo=currentPollRepo;var completedOwner=currentPollOwner;currentPollToken=null;currentPollOwner=null;currentPollRepo=null;currentPollDispatchDate=null;currentPollAttempts=0;if(conclusion==='success'){logMsg('✅ Build réussi !','success');setStatus('SUCCÈS','success');var url='https://github.com/'+completedOwner+'/'+completedRepo+'/releases/download/latest/'+completedRepo+'-debug.apk';directDownloadUrl=url;byId('downloadBtn').style.display='flex';generateQR(url);saveToHistory(completedRepo,url,currentMode);notify('APK prêt !','success');}else{logMsg('❌ Échec ('+conclusion+')','error');setStatus('ÉCHEC','error');notify('Build échoué','danger');}}}catch(e){}}finally{pollInFlight=false;}}
+async function pollOnce(){if(pollInFlight)return;pollInFlight=true;try{if(!currentPollToken||!currentPollOwner||!currentPollRepo||!currentPollDispatchDate)return;currentPollAttempts++;if(currentPollAttempts>currentPollMaxAttempts){if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}logMsg('⏱️ Délai dépassé','warn');setStatus('TIMEOUT','error');byId('buildBtn').disabled=false;buildInProgress=false;currentRunId=null;currentPollToken=null;currentPollOwner=null;currentPollRepo=null;currentPollDispatchDate=null;currentPollAttempts=0;return;}try{var res=await fetch('https://api.github.com/repos/'+currentPollOwner+'/'+currentPollRepo+'/actions/runs?event=workflow_dispatch&per_page=10',{headers:{'Authorization':'Bearer '+currentPollToken}});if(!res.ok)return;var data=await res.json();if(!data.workflow_runs||data.workflow_runs.length===0){logMsg('⏳ File d\'attente...','warn');return;}var filteredRuns=data.workflow_runs.filter(function(run){var runDate=new Date(run.created_at);return runDate.getTime()>=currentPollDispatchDate.getTime()-currentPollTolerance;});if(filteredRuns.length===0)filteredRuns=[data.workflow_runs[0]];var run=filteredRuns[0];currentRunId=run.id;currentRunNumber=run.run_number;var status=run.status;var conclusion=run.conclusion;if(status==='queued'){logMsg('⏳ File d\'attente...','warn');}else if(status==='in_progress'){logMsg('🔧 Compilation...','info');setStatus('BUILD...','loading');}else if(status==='completed'){if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}byId('buildBtn').disabled=false;buildInProgress=false;currentRunId=null;var completedRepo=currentPollRepo;var completedOwner=currentPollOwner;currentPollToken=null;currentPollOwner=null;currentPollRepo=null;currentPollDispatchDate=null;currentPollAttempts=0;if(conclusion==='success'){logMsg('✅ Build réussi !','success');setStatus('SUCCÈS','success');var url='https://github.com/'+completedOwner+'/'+completedRepo+'/releases/download/v'+currentRunNumber+'/'+completedRepo+'.apk';directDownloadUrl=url;byId('downloadBtn').style.display='flex';byId('logsBtn').style.display='none';generateQR(url);saveToHistory(completedRepo,url,currentMode);notify('APK prêt !','success');}else{logMsg('❌ Échec ('+conclusion+')','error');setStatus('ÉCHEC','error');buildLogsUrl = run.html_url;byId('logsBtn').style.display='flex';notify('Build échoué','danger');}}}catch(e){}}finally{pollInFlight=false;}}
 function startPolling(token,pollOwner,pollRepo,dispatchTimestamp){if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}currentPollToken=token;currentPollOwner=pollOwner;currentPollRepo=pollRepo;currentPollDispatchDate=new Date(dispatchTimestamp);currentPollAttempts=0;pollingInterval=setInterval(function(){pollOnce();},8000);}
 function manualCheck(){if(!buildInProgress){logMsg('⚠️ Aucun build en cours','warn');return;}logMsg('🔄 Vérification manuelle...','info');pollOnce();}
 
 async function pushCodeToSandbox(token,code){logMsg('📤 Envoi code vers sandbox...','info');try{var sha=null;var getRes=await fetch('https://api.github.com/repos/'+SANDBOX_OWNER+'/'+SANDBOX_REPO+'/contents/index.html',{headers:{'Authorization':'Bearer '+token}});if(getRes.ok){var d=await getRes.json();sha=d.sha;}else if(getRes.status!==404){var e=await getRes.json();throw new Error(e.message||'Erreur');}var encoded=btoa(unescape(encodeURIComponent(code)));var body={message:'feat: mise à jour depuis APKor (code direct)',content:encoded,branch:currentBranch};if(sha)body.sha=sha;var putRes=await fetch('https://api.github.com/repos/'+SANDBOX_OWNER+'/'+SANDBOX_REPO+'/contents/index.html',{method:'PUT',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!putRes.ok){var err=await putRes.json();throw new Error(err.message||'Erreur');}logMsg('✅ index.html sandbox mis à jour','success');return true;}catch(err){logMsg('❌ '+err.message,'error');throw err;}}
 function utf8_to_b64(str){return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,function(match,p1){return String.fromCharCode(parseInt(p1,16));}));}
 
-async function ensureWorkflowExists(token,targetOwner,targetRepo){logMsg('📄 Vérification workflow...','info');var newYaml=getYamlContent(targetRepo);var newEncoded=utf8_to_b64(newYaml);var sha=null;var fileExists=false;try{var getRes=await fetch('https://api.github.com/repos/'+targetOwner+'/'+targetRepo+'/contents/'+WORKFLOW_PATH,{headers:{'Authorization':'Bearer '+token}});if(getRes.ok){var data=await getRes.json();sha=data.sha;fileExists=true;var normalizedExisting=data.content.replace(/\n/g,'');if(normalizedExisting===newEncoded){logMsg('✅ Workflow déjà à jour','success');return true;}}else if(getRes.status!==404){throw new Error('Erreur '+getRes.status);}}catch(e){if(!e.message.includes('404'))throw e;}var body={message:'feat: workflow APKor',content:newEncoded,branch:currentBranch};if(sha)body.sha=sha;var putRes=await fetch('https://api.github.com/repos/'+targetOwner+'/'+targetRepo+'/contents/'+WORKFLOW_PATH,{method:'PUT',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!putRes.ok){var errData=await putRes.json();throw new Error(errData.message||'Erreur '+putRes.status);}logMsg('✅ Workflow mis à jour','success');if(!fileExists){logMsg('⏳ Indexation...','warn');await new Promise(function(r){setTimeout(r,3000);});}return true;}
+async function ensureWorkflowExists(token,targetOwner,targetRepo){
+  logMsg('📄 Vérification workflow...','info');
+  var appName = byId('appNameInput').value.trim() || targetRepo;
+  var appId = byId('appIdInput').value.trim() || 'com.brahim.'+targetRepo.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  
+  if(!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/.test(appId)) {
+    throw new Error('ID de package invalide (ex: com.moi.monapp). Pas de tirets, majuscules, espaces ni chiffres au début.');
+  }
+  
+  appName = appName.replace(/["\\$`]/g, '');
 
-async function triggerBuild(){if(buildInProgress)return;var token=byId('ghToken').value.trim();if(!token||token.length<20){logMsg('❌ Token invalide','error');notify('Token invalide','danger');return;}buildInProgress=true;byId('buildBtn').disabled=true;byId('downloadBtn').style.display='none';byId('qrContainer').classList.remove('show');directDownloadUrl='#';currentRunId=null;haptic(12);logMsg('═══════════════════','highlight');try{var targetOwner,targetRepo;if(currentMode==='direct'){var code=byId('codeInput').value.trim();if(!code){logMsg('❌ Aucun code HTML','error');buildInProgress=false;byId('buildBtn').disabled=false;return;}await pushCodeToSandbox(token,code);targetOwner=SANDBOX_OWNER;targetRepo=SANDBOX_REPO;logMsg('🚀 Build sandbox : '+targetRepo,'highlight');}else{if(!currentRepo){logMsg('❌ Aucun projet sélectionné','error');buildInProgress=false;byId('buildBtn').disabled=false;return;}targetOwner=currentOwner;targetRepo=currentRepo;logMsg('🚀 Build : '+targetRepo,'highlight');}if(newIconData&&newIconData.dataURL){logMsg('🖼️ Envoi nouvelle icône...','info');await pushIconToRepo(token,targetOwner,targetRepo,newIconData);}setStatus('DÉMARRAGE...','loading');await ensureWorkflowExists(token,targetOwner,targetRepo);logMsg('📡 Envoi commande...','info');var dispatchRes=null;var maxAttempts=5;var attempt=0;while(attempt<maxAttempts){attempt++;dispatchRes=await fetch('https://api.github.com/repos/'+targetOwner+'/'+targetRepo+'/actions/workflows/'+WORKFLOW_FILENAME+'/dispatches',{method:'POST',headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({ref:currentBranch})});if(dispatchRes.status===204)break;if(attempt>=maxAttempts)break;var waitTime=3000;if(dispatchRes.status===403||dispatchRes.status===429){var retryAfter=dispatchRes.headers.get('Retry-After');if(retryAfter){var retrySeconds=parseInt(retryAfter,10);if(!isNaN(retrySeconds)&&retrySeconds>0){waitTime=Math.min(retrySeconds*1000,60000);}}}logMsg('⏳ Retentative '+attempt+'/'+maxAttempts+'...','warn');await new Promise(function(r){setTimeout(r,waitTime);});}if(dispatchRes.status===204){logMsg('✅ Commande envoyée','success');setStatus('BUILD...','loading');var dispatchTimestamp=new Date().toISOString();setTimeout(function(){startPolling(token,targetOwner,targetRepo,dispatchTimestamp);},3000);}else{var err=await dispatchRes.json().catch(function(){return{};});throw new Error(err.message||'Erreur '+dispatchRes.status);}}catch(err){logMsg('❌ '+err.message,'error');setStatus('ÉCHEC','error');byId('buildBtn').disabled=false;buildInProgress=false;currentRunId=null;notify(err.message,'danger');}}
+  var newYaml=getYamlContent(targetRepo, appName, appId);
+  var newEncoded=utf8_to_b64(newYaml);
+  var sha=null;
+  var fileExists=false;
+  try{
+    var getRes=await fetch('https://api.github.com/repos/'+targetOwner+'/'+targetRepo+'/contents/'+WORKFLOW_PATH,{headers:{'Authorization':'Bearer '+token}});
+    if(getRes.ok){
+      var data=await getRes.json();
+      sha=data.sha;
+      fileExists=true;
+      var normalizedExisting=data.content.replace(/\n/g,'');
+      if(normalizedExisting===newEncoded){
+        logMsg('✅ Workflow déjà à jour','success');
+        return true;
+      }
+    }else if(getRes.status!==404){
+      throw new Error('Erreur '+getRes.status);
+    }
+  }catch(e){
+    if(!e.message.includes('404'))throw e;
+  }
+  var body={message:'feat: workflow APKor',content:newEncoded,branch:currentBranch};
+  if(sha)body.sha=sha;
+  var putRes=await fetch('https://api.github.com/repos/'+targetOwner+'/'+targetRepo+'/contents/'+WORKFLOW_PATH,{method:'PUT',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!putRes.ok){
+    var errData=await putRes.json();
+    throw new Error(errData.message||'Erreur '+putRes.status);
+  }
+  logMsg('✅ Workflow mis à jour','success');
+  if(!fileExists){
+    logMsg('⏳ Indexation...','warn');
+    await new Promise(function(r){setTimeout(r,3000);});
+  }
+  return true;
+}
 
-async function cancelBuild(){if(!buildInProgress){logMsg('⚠️ Aucun build en cours','warn');return;}var token=byId('ghToken').value.trim();if(!token||token.length<20){logMsg('❌ Token invalide','error');return;}logMsg('🛑 Annulation...','warn');if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}if(currentRunId){try{var cancelRes=await fetch('https://api.github.com/repos/'+currentOwner+'/'+currentRepo+'/actions/runs/'+currentRunId+'/cancel',{method:'POST',headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github.v3+json'}});if(cancelRes.status===202)logMsg('✅ Annulation demandée','success');else logMsg('⚠️ Annulation impossible ('+cancelRes.status+')','warn');}catch(err){logMsg('⚠️ '+err.message,'error');}}buildInProgress=false;byId('buildBtn').disabled=false;currentRunId=null;directDownloadUrl='#';byId('downloadBtn').style.display='none';byId('qrContainer').classList.remove('show');currentPollToken=null;currentPollOwner=null;currentPollRepo=null;currentPollDispatchDate=null;currentPollAttempts=0;pollInFlight=false;setStatus('PRÊT','ready');logMsg('🔄 Réinitialisé','info');}
+async function triggerBuild(){if(buildInProgress)return;var token=byId('ghToken').value.trim();if(!token||token.length<20){logMsg('❌ Token invalide','error');notify('Token invalide','danger');return;}buildInProgress=true;byId('buildBtn').disabled=true;byId('downloadBtn').style.display='none';byId('logsBtn').style.display='none';byId('qrContainer').classList.remove('show');directDownloadUrl='#';buildLogsUrl='#';currentRunId=null;haptic(12);logMsg('═══════════════════','highlight');try{var targetOwner,targetRepo;if(currentMode==='direct'){var code=byId('codeInput').value.trim();if(!code){logMsg('❌ Aucun code HTML','error');buildInProgress=false;byId('buildBtn').disabled=false;return;}await pushCodeToSandbox(token,code);targetOwner=SANDBOX_OWNER;targetRepo=SANDBOX_REPO;logMsg('🚀 Build sandbox : '+targetRepo,'highlight');}else{if(!currentRepo){logMsg('❌ Aucun projet sélectionné','error');buildInProgress=false;byId('buildBtn').disabled=false;return;}targetOwner=currentOwner;targetRepo=currentRepo;logMsg('🚀 Build : '+targetRepo,'highlight');}if(newIconData&&newIconData.dataURL){logMsg('🖼️ Envoi nouvelle icône...','info');await pushIconToRepo(token,targetOwner,targetRepo,newIconData);}setStatus('DÉMARRAGE...','loading');await ensureWorkflowExists(token,targetOwner,targetRepo);logMsg('📡 Envoi commande...','info');var dispatchRes=null;var maxAttempts=5;var attempt=0;while(attempt<maxAttempts){attempt++;dispatchRes=await fetch('https://api.github.com/repos/'+targetOwner+'/'+targetRepo+'/actions/workflows/'+WORKFLOW_FILENAME+'/dispatches',{method:'POST',headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({ref:currentBranch})});if(dispatchRes.status===204)break;if(attempt>=maxAttempts)break;var waitTime=3000;if(dispatchRes.status===403||dispatchRes.status===429){var retryAfter=dispatchRes.headers.get('Retry-After');if(retryAfter){var retrySeconds=parseInt(retryAfter,10);if(!isNaN(retrySeconds)&&retrySeconds>0){waitTime=Math.min(retrySeconds*1000,60000);}}}logMsg('⏳ Retentative '+attempt+'/'+maxAttempts+'...','warn');await new Promise(function(r){setTimeout(r,waitTime);});}if(dispatchRes.status===204){logMsg('✅ Commande envoyée','success');setStatus('BUILD...','loading');var dispatchTimestamp=new Date().toISOString();setTimeout(function(){startPolling(token,targetOwner,targetRepo,dispatchTimestamp);},3000);}else{var err=await dispatchRes.json().catch(function(){return{};});throw new Error(err.message||'Erreur '+dispatchRes.status);}}catch(err){logMsg('❌ '+err.message,'error');setStatus('ÉCHEC','error');byId('buildBtn').disabled=false;buildInProgress=false;currentRunId=null;notify(err.message,'danger');}}
+
+async function cancelBuild(){if(!buildInProgress){logMsg('⚠️ Aucun build en cours','warn');return;}var token=byId('ghToken').value.trim();if(!token||token.length<20){logMsg('❌ Token invalide','error');return;}logMsg('🛑 Annulation...','warn');if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}if(currentRunId){try{var cancelRes=await fetch('https://api.github.com/repos/'+currentOwner+'/'+currentRepo+'/actions/runs/'+currentRunId+'/cancel',{method:'POST',headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github.v3+json'}});if(cancelRes.status===202)logMsg('✅ Annulation demandée','success');else logMsg('⚠️ Annulation impossible ('+cancelRes.status+')','warn');}catch(err){logMsg('⚠️ '+err.message,'error');}}buildInProgress=false;byId('buildBtn').disabled=false;currentRunId=null;directDownloadUrl='#';buildLogsUrl='#';byId('downloadBtn').style.display='none';byId('logsBtn').style.display='none';byId('qrContainer').classList.remove('show');currentPollToken=null;currentPollOwner=null;currentPollRepo=null;currentPollDispatchDate=null;currentPollAttempts=0;pollInFlight=false;setStatus('PRÊT','ready');logMsg('🔄 Réinitialisé','info');}
 function downloadAPK(){if(directDownloadUrl&&directDownloadUrl!=='#'){window.open(directDownloadUrl,'_blank');logMsg('📲 Téléchargement lancé','success');}}
+function openBuildLogs(){if(buildLogsUrl&&buildLogsUrl!=='#'){window.open(buildLogsUrl,'_blank');logMsg('📜 Ouverture des logs','info');}}
 
-(function init(){var saved=store.getItem(LS_KEYS.TOKEN);if(saved){byId('ghToken').value=saved;setTimeout(function(){verifyTokenAndLoadRepos(saved);},300);}setMode('repo');renderHistory();var tokenInput=byId('ghToken');var tokenFetchTimer=null;tokenInput.addEventListener('input',function(e){var token=e.target.value.trim();store.setItem(LS_KEYS.TOKEN,token);showSaveIndicator();clearTimeout(tokenFetchTimer);if(token.length>20){tokenFetchTimer=setTimeout(function(){verifyTokenAndLoadRepos(token);},700);}else{reposMap.clear();byId('repoInput').disabled=true;byId('repoInput').placeholder='Colle ton token pour charger les projets...';byId('buildBtn').disabled=true;setRepoBadgeText('');}});tokenInput.addEventListener('keydown',function(e){if(e.key==='Enter')verifyTokenAndLoadRepos(tokenInput.value.trim());});var repoInput=byId('repoInput');var repoDropdown=byId('repoDropdown');repoInput.addEventListener('focus',function(){if(currentMode==='repo')openRepoDropdown();});repoInput.addEventListener('input',function(){if(currentMode==='repo'){openRepoDropdown();checkSelection();}});repoInput.addEventListener('keydown',function(e){var isOpen=repoDropdown.classList.contains('open');if(e.key==='ArrowDown'){e.preventDefault();if(!isOpen){openRepoDropdown();return;}if(filteredRepos.length===0)return;dropdownActiveIndex=(dropdownActiveIndex+1)%filteredRepos.length;updateDropdownActive();}else if(e.key==='ArrowUp'){e.preventDefault();if(!isOpen)return;if(filteredRepos.length===0)return;dropdownActiveIndex=(dropdownActiveIndex-1+filteredRepos.length)%filteredRepos.length;updateDropdownActive();}else if(e.key==='Enter'){e.preventDefault();if(isOpen&&dropdownActiveIndex>=0)selectRepo(dropdownActiveIndex);else if(!byId('buildBtn').disabled)triggerBuild();}else if(e.key==='Escape')closeRepoDropdown();});document.addEventListener('click',function(e){if(!e.target.closest('.repo-wrap'))closeRepoDropdown();});byId('codeInput').addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();if(!byId('buildBtn').disabled)triggerBuild();}});document.addEventListener('visibilitychange',function(){if(!document.hidden&&buildInProgress&&pollingInterval)pollOnce();});if(typeof Notification!=='undefined'&&Notification.permission==='default'){Notification.requestPermission();}logMsg('🚀 APKor prêt','info');logMsg('💡 Colle ton token GitHub pour commencer','info');setStatus('PRÊT','ready');if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){});});}})();
+(function init(){var saved=store.getItem(LS_KEYS.TOKEN);if(saved){byId('ghToken').value=saved;setTimeout(function(){verifyTokenAndLoadRepos(saved);},300);}var savedAppName=store.getItem(LS_KEYS.APP_NAME);if(savedAppName)byId('appNameInput').value=savedAppName;var savedAppId=store.getItem(LS_KEYS.APP_ID);if(savedAppId)byId('appIdInput').value=savedAppId;setMode('repo');renderHistory();var tokenInput=byId('ghToken');var tokenFetchTimer=null;tokenInput.addEventListener('input',function(e){var token=e.target.value.trim();store.setItem(LS_KEYS.TOKEN,token);showSaveIndicator();clearTimeout(tokenFetchTimer);if(token.length>20){tokenFetchTimer=setTimeout(function(){verifyTokenAndLoadRepos(token);},700);}else{reposMap.clear();byId('repoInput').disabled=true;byId('repoInput').placeholder='Colle ton token pour charger les projets...';byId('buildBtn').disabled=true;setRepoBadgeText('');}});tokenInput.addEventListener('keydown',function(e){if(e.key==='Enter')verifyTokenAndLoadRepos(tokenInput.value.trim());});var repoInput=byId('repoInput');var repoDropdown=byId('repoDropdown');repoInput.addEventListener('focus',function(){if(currentMode==='repo')openRepoDropdown();});repoInput.addEventListener('input',function(){if(currentMode==='repo'){openRepoDropdown();checkSelection();}});repoInput.addEventListener('keydown',function(e){var isOpen=repoDropdown.classList.contains('open');if(e.key==='ArrowDown'){e.preventDefault();if(!isOpen){openRepoDropdown();return;}if(filteredRepos.length===0)return;dropdownActiveIndex=(dropdownActiveIndex+1)%filteredRepos.length;updateDropdownActive();}else if(e.key==='ArrowUp'){e.preventDefault();if(!isOpen)return;if(filteredRepos.length===0)return;dropdownActiveIndex=(dropdownActiveIndex-1+filteredRepos.length)%filteredRepos.length;updateDropdownActive();}else if(e.key==='Enter'){e.preventDefault();if(isOpen&&dropdownActiveIndex>=0)selectRepo(dropdownActiveIndex);else if(!byId('buildBtn').disabled)triggerBuild();}else if(e.key==='Escape')closeRepoDropdown();});document.addEventListener('click',function(e){if(!e.target.closest('.repo-wrap'))closeRepoDropdown();});byId('codeInput').addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();if(!byId('buildBtn').disabled)triggerBuild();}});document.addEventListener('visibilitychange',function(){if(!document.hidden&&buildInProgress&&pollingInterval)pollOnce();});if(typeof Notification!=='undefined'&&Notification.permission==='default'){Notification.requestPermission();}logMsg('🚀 APKor prêt','info');logMsg('💡 Colle ton token GitHub pour commencer','info');setStatus('PRÊT','ready');if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){});});}})();
 
-window.openSheet=openSheet;window.closeSheet=closeSheet;window.setMode=setMode;window.toggleTokenView=toggleTokenView;window.pasteToken=pasteToken;window.clearToken=clearToken;window.refreshRepos=refreshRepos;window.pasteCode=pasteCode;window.clearIcon=clearIcon;window.triggerBuild=triggerBuild;window.cancelBuild=cancelBuild;window.manualCheck=manualCheck;window.downloadAPK=downloadAPK;window.copyLogs=copyLogs;window.clearLogs=clearLogs;window.toggleHistory=toggleHistory;window.clearHistory=clearHistory;
+window.openSheet=openSheet;window.closeSheet=closeSheet;window.setMode=setMode;window.toggleTokenView=toggleTokenView;window.pasteToken=pasteToken;window.clearToken=clearToken;window.refreshRepos=refreshRepos;window.pasteCode=pasteCode;window.clearIcon=clearIcon;window.triggerBuild=triggerBuild;window.cancelBuild=cancelBuild;window.manualCheck=manualCheck;window.downloadAPK=downloadAPK;window.copyLogs=copyLogs;window.clearLogs=clearLogs;window.toggleHistory=toggleHistory;window.clearHistory=clearHistory;window.openBuildLogs=openBuildLogs;window.saveCustomAppInfo=saveCustomAppInfo;
 </script>
 </body>
 </html>
