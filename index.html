@@ -379,7 +379,7 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
     <div class="info-list">
       <div class="info-item"><div class="info-item-icon">📦</div><div class="info-item-body"><div class="info-item-title">Mode Projet</div><div class="info-item-desc">Choisis un dépôt GitHub existant.</div></div></div>
       <div class="info-item"><div class="info-item-icon">✏️</div><div class="info-item-body"><div class="info-item-title">Mode Code direct</div><div class="info-item-desc">Colle ton code HTML → sandbox <b>testapk</b>.</div></div></div>
-      <div class="info-item"><div class="info-item-icon">🔐</div><div class="info-item-body"><div class="info-item-title">Permissions natives</div><div class="info-item-desc">Le workflow demande les permissions via l'action utilisateur.</div></div></div>
+      <div class="info-item"><div class="info-item-icon">🔐</div><div class="info-item-body"><div class="info-item-title">Permissions natives</div><div class="info-item-desc">Le workflow laisse Capacitor gérer les permissions proprement.</div></div></div>
     </div>
     <div class="info-footer">Made by Brahim Laiche · 2026 · Paris</div>
   </div>
@@ -544,8 +544,6 @@ jobs:
           import android.content.pm.PackageManager;
           import android.os.Build;
           import android.os.Bundle;
-          import android.webkit.PermissionRequest;
-          import android.webkit.WebChromeClient;
           import android.webkit.WebView;
           import androidx.core.app.ActivityCompat;
           import androidx.core.content.ContextCompat;
@@ -555,53 +553,30 @@ jobs:
           
           public class MainActivity extends BridgeActivity {
               private static final int PERMISSION_REQUEST_CODE = 1001;
-              private PermissionRequest pendingWebPermissionRequest;
           
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   
-                  // 1. Demande native au démarrage (Notifs)
+                  // Autoriser la lecture audio sans interaction obligatoire
+                  WebView webView = this.bridge.getWebView();
+                  webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+          
+                  // Demande native au démarrage (Ne casse pas Capacitor)
                   List<String> permissionsNeeded = new ArrayList<>();
+                  
+                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                      permissionsNeeded.add(Manifest.permission.RECORD_AUDIO);
+                  }
+                  
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                       if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                           permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS);
                       }
                   }
+          
                   if (!permissionsNeeded.isEmpty()) {
                       ActivityCompat.requestPermissions(this, permissionsNeeded.toArray(new String[0]), PERMISSION_REQUEST_CODE);
-                  }
-          
-                  // 2. Interception WebView (Micro)
-                  WebView webView = this.bridge.getWebView();
-                  webView.setWebChromeClient(new WebChromeClient() {
-                      @Override
-                      public void onPermissionRequest(final PermissionRequest request) {
-                          runOnUiThread(() -> {
-                              boolean hasMicPermission = ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
-                              if (hasMicPermission) {
-                                  request.grant(request.getResources());
-                              } else {
-                                  pendingWebPermissionRequest = request;
-                                  ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
-                              }
-                          });
-                      }
-                  });
-              }
-          
-              @Override
-              public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-                  super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-                  if (requestCode == PERMISSION_REQUEST_CODE) {
-                      if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                          if (pendingWebPermissionRequest != null) {
-                              pendingWebPermissionRequest.grant(pendingWebPermissionRequest.getResources());
-                              pendingWebPermissionRequest = null;
-                          }
-                      } else {
-                          pendingWebPermissionRequest = null;
-                      }
                   }
               }
           }
