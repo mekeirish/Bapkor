@@ -699,6 +699,15 @@ function renderApkCards(list, grid){
     name.textContent = entry.repo;
     card.appendChild(name);
 
+    // Anti-doublon : sur mobile, long press peut déclencher à la fois
+    // le pressTimer ET l'événement natif contextmenu → 2 copies.
+    function doCopy(){
+      if(card.dataset.copied === '1') return;
+      card.dataset.copied = '1';
+      copyApkLink(entry);
+      setTimeout(function(){ card.dataset.copied = '0'; }, 800);
+    }
+
     card.addEventListener('click', function(){
       if(card.dataset.longPressed === '1'){
         card.dataset.longPressed = '0';
@@ -709,9 +718,10 @@ function renderApkCards(list, grid){
 
     var pressTimer = null;
     card.addEventListener('touchstart', function(){
+      card.dataset.copied = '0';
       pressTimer = setTimeout(function(){
         card.dataset.longPressed = '1';
-        copyApkLink(entry);
+        doCopy();
       }, 500);
     }, {passive: true});
 
@@ -720,7 +730,7 @@ function renderApkCards(list, grid){
 
     card.addEventListener('contextmenu', function(e){
       e.preventDefault();
-      copyApkLink(entry);
+      doCopy();
     });
 
     grid.appendChild(card);
