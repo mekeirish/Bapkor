@@ -20,7 +20,7 @@ window.tailwind.config = { theme: { extend: { fontFamily: { inter: ["Inter", "sa
 </script>
 <style>
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-html, body{ width:100%; height:100%; margin:0; overflow:hidden; background:#050608; }
+html, body{ width:100%; height:100%; margin:0; overflow:hidden; background:#050608; overscroll-behavior:none; }
 body{ font-family:Inter,sans-serif; color:#f8fafc; background:#050608; position:relative; -webkit-user-select:none; user-select:none; }
 input, textarea{ -webkit-user-select:text; user-select:text; }
 .aurora{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
@@ -34,7 +34,7 @@ input, textarea{ -webkit-user-select:text; user-select:text; }
 .noise{ position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.035; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 button, input, textarea, select{ font-family:inherit; }
 button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
-.app{ position:relative; z-index:2; width:100%; height:100dvh; min-height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
+.app{ position:relative; z-index:2; width:100%; height:100dvh; min-height:100dvh; display:flex; flex-direction:column; overflow:hidden; overscroll-behavior:none; }
 .app-inner{ width:100%; max-width:680px; height:100%; margin:auto; padding: max(8px,env(safe-area-inset-top)) 10px max(8px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; overflow:hidden; }
 .glass{ background: linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.025)); border:1px solid rgba(255,255,255,.075); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 18px 50px rgba(0,0,0,.28); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); }
 .glass-accent{ border:1px solid rgba(250,204,21,.25); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 1px rgba(250,204,21,.05), 0 18px 50px rgba(0,0,0,.28), 0 0 40px rgba(250,204,21,.08); }
@@ -64,7 +64,7 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
 .header-btn.key-btn.active{ background:rgba(250,204,21,.15); border-color:rgba(250,204,21,.35); color:#fef3c7; }
 .save-indicator{ position:absolute; top:-2px; left:-2px; width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow: 0 0 6px #22c55e; opacity:0; transition:.3s ease; }
 .save-indicator.show{ opacity:1; }
-.main{ flex:1; min-height:0; display:flex; flex-direction:column; gap:6px; overflow:hidden; }
+.main{ flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
 .card{ border-radius:16px; padding:12px; flex:0 0 auto; }
 .section-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 .section-title{ font-size:9px; text-transform:uppercase; letter-spacing:.15em; color:#64748b; font-weight:800; }
@@ -144,7 +144,7 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
 .btn-apk{ height:54px; border-radius:13px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-weight:800; font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:#fde047; background:rgba(250,204,21,.1); border:1px solid rgba(250,204,21,.3); transition:.15s ease; }
 .btn-apk:active{ transform:scale(.96); background:rgba(250,204,21,.2); }
 .btn-apk span.icon{ font-size:18px; line-height:1; }
-.apk-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.apk-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding-bottom:12px; }
 .apk-card{ aspect-ratio:1; border-radius:18px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding:0 0 8px 0; text-align:center; cursor:pointer; transition:.15s ease; overflow:hidden; position:relative; box-shadow:0 4px 12px rgba(0,0,0,.25); }
 .apk-card:active{ transform:scale(.94); }
 .apk-card-icon{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:18px; }
@@ -156,14 +156,14 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
 .qr-container.show{ display:block; }
 .qr-container canvas{ display:block; margin:0 auto; border-radius:8px; background:#fff; padding:4px; }
 .qr-container p{ color:#94a3b8; font-size:9px; margin-top:10px; font-weight:700; letter-spacing:.04em; }
-.terminal{ border-radius:14px; overflow:hidden; background:rgba(0,0,0,.42); border:1px solid rgba(250,204,21,.15); display:flex; flex-direction:column; flex:1; min-height:0; }
+.terminal{ border-radius:14px; overflow:hidden; background:rgba(0,0,0,.42); border:1px solid rgba(250,204,21,.15); display:flex; flex-direction:column; flex:1; min-height:160px; max-height:42dvh; }
 .terminal-head{ display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:rgba(0,0,0,.3); border-bottom:1px solid rgba(255,255,255,.04); flex:0 0 auto; }
 .terminal-title{ display:flex; align-items:center; gap:8px; font-size:8px; font-weight:800; letter-spacing:.14em; color:#fde047; text-transform:uppercase; }
 .terminal-title .dot-live{ width:6px; height:6px; border-radius:50%; background:#facc15; box-shadow: 0 0 6px #facc15; animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
 .terminal-actions{ display:flex; gap:4px; }
 .terminal-actions .icon-btn{ width:28px; height:28px; font-size:12px; border-radius:7px; }
-.terminal-body{ flex:1; min-height:0; padding:10px 12px; overflow-y:auto; font-family:"Courier New",monospace; font-size:11px; line-height:1.55; color:#94a3b8; -webkit-overflow-scrolling: touch; }
+.terminal-body{ flex:1; min-height:0; padding:10px 12px; overflow-y:auto; font-family:"Courier New",monospace; font-size:11px; line-height:1.55; color:#94a3b8; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
 .terminal-body::-webkit-scrollbar{ width:4px; }
 .terminal-body::-webkit-scrollbar-thumb{ background:rgba(250,204,21,.3); border-radius:2px; }
 .log-entry{ display:flex; gap:6px; align-items:baseline; padding:1px 0; }
@@ -174,12 +174,12 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
 .log-msg.error{ color:#f87171; }
 .log-msg.warn{ color:#fcd34d; }
 .log-msg.highlight{ color:#fde047; font-weight:700; }
-.history{ margin-top:8px; background:rgba(0,0,0,.32); border:1px solid rgba(255,255,255,.055); border-radius:14px; overflow:hidden; flex:0 0 auto; max-height:240px; display:flex; flex-direction:column; }
+.history{ margin-top:6px; background:rgba(0,0,0,.32); border:1px solid rgba(255,255,255,.055); border-radius:14px; overflow:hidden; flex:0 0 auto; max-height:220px; display:flex; flex-direction:column; }
 .history-head{ display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:rgba(0,0,0,.2); cursor:pointer; user-select:none; flex:0 0 auto; }
 .history-head span:first-child{ font-size:8px; font-weight:800; letter-spacing:.14em; color:#64748b; text-transform:uppercase; }
 .history-toggle{ color:#64748b; font-size:9px; transition: transform .25s ease; }
 .history.open .history-toggle{ transform: rotate(90deg); }
-.history-body{ display:none; padding:8px 10px; max-height:180px; overflow-y:auto; flex:1; min-height:0; }
+.history-body{ display:none; padding:8px 10px; max-height:170px; overflow-y:auto; flex:1; min-height:0; -webkit-overflow-scrolling:touch; }
 .history.open .history-body{ display:block; }
 .history-body::-webkit-scrollbar{ width:3px; }
 .history-body::-webkit-scrollbar-thumb{ background:rgba(250,204,21,.3); border-radius:2px; }
@@ -206,7 +206,7 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
 .sheet-sub{ font-size:8px; text-transform:uppercase; letter-spacing:.14em; color:#a16207; font-weight:700; margin-bottom:3px; }
 .sheet-close{ width:44px; height:44px; border-radius:12px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); color:#94a3b8; font-size:18px; display:flex; align-items:center; justify-content:center; }
 .sheet-close:active{ background:rgba(255,255,255,.1); color:#f8fafc; }
-.sheet-body{ flex:1; min-height:0; overflow-y:auto; padding:14px 18px 18px 18px; }
+.sheet-body{ flex:1; min-height:0; overflow-y:auto; padding:14px 18px 18px 18px; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
 .info-list{ display:flex; flex-direction:column; gap:10px; }
 .info-item{ display:flex; align-items:flex-start; gap:12px; padding:12px 14px; border-radius:13px; background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.05); }
 .info-item-icon{ flex:0 0 36px; width:36px; height:36px; border-radius:11px; display:flex; align-items:center; justify-content:center; background:rgba(250,204,21,.1); border:1px solid rgba(250,204,21,.2); font-size:16px; }
@@ -472,6 +472,7 @@ let newIconData = null;
 let existingIconData = null;
 let currentPollToken = null, currentPollOwner = null, currentPollRepo = null, currentPollDispatchDate = null, currentPollTolerance = 10000, currentPollAttempts = 0, currentPollMaxAttempts = 90, pollInFlight = false;
 let filteredRepos = [], dropdownActiveIndex = -1;
+let apkCache = { data: null, timestamp: 0 };
 
 function haptic(ms){ ms=ms||8; try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
 let saveIndicatorTimer = null;
@@ -530,22 +531,149 @@ function toggleAppOptions(){
   btn.classList.toggle('active', isHidden);
   haptic(6);
 }
-function renderApkGrid(){
+async function renderApkGrid(){
   var grid = byId('apkGrid');
   if(!grid) return;
-  var history = loadHistory();
-  grid.innerHTML = '';
 
-  if(history.length === 0){
-    grid.innerHTML = '<div class="apk-empty">Aucun APK disponible pour le moment</div>';
+  var token = byId('ghToken').value.trim();
+  if(!token || token.length < 20){
+    grid.innerHTML = '<div class="apk-empty">Token GitHub requis</div>';
     return;
   }
 
-  history.forEach(function(entry){
+  // Cache mémoire (5 minutes)
+  var now = Date.now();
+  if(apkCache.data && (now - apkCache.timestamp) < 5 * 60 * 1000){
+    renderApkCards(apkCache.data, grid);
+    return;
+  }
+
+  grid.innerHTML = '<div class="apk-empty">Scan des APKs en cours...</div>';
+
+  try{
+    // Construire la liste des dépôts à scanner : tous les dépôts de l'utilisateur + le sandbox
+    var candidates = [];
+    var candidateKeys = new Set();
+
+    reposMap.forEach(function(repo){
+      var key = repo.owner.login + '/' + repo.name;
+      if(candidateKeys.has(key)) return;
+      candidateKeys.add(key);
+      candidates.push({ owner: repo.owner.login, name: repo.name, pushed_at: repo.pushed_at });
+    });
+
+    // Ajouter le sandbox s'il n'est pas déjà présent (cas Code direct)
+    var sandboxKey = SANDBOX_OWNER + '/' + SANDBOX_REPO;
+    if(!candidateKeys.has(sandboxKey)){
+      candidateKeys.add(sandboxKey);
+      candidates.push({ owner: SANDBOX_OWNER, name: SANDBOX_REPO, pushed_at: new Date(0).toISOString() });
+    }
+
+    // Trier par date de push décroissante
+    candidates.sort(function(a,b){
+      return new Date(b.pushed_at || 0) - new Date(a.pushed_at || 0);
+    });
+
+    var found = [];
+    var seen = new Set();
+    var concurrency = 6;
+    var rateLimitHit = false;
+
+    for(var i = 0; i < candidates.length; i += concurrency){
+      var batch = candidates.slice(i, i + concurrency);
+
+      await Promise.all(batch.map(async function(repo){
+        var key = repo.owner + '/' + repo.name;
+        if(seen.has(key)) return;
+
+        try{
+          var res = await fetch('https://api.github.com/repos/'+repo.owner+'/'+repo.name+'/releases?per_page=5', {
+            headers: {
+              'Authorization': 'Bearer '+token,
+              'Accept': 'application/vnd.github+json'
+            }
+          });
+
+          if(!res.ok){
+            if(res.status === 403 || res.status === 401){
+              rateLimitHit = true;
+            }
+            return;
+          }
+
+          var releases = await res.json();
+          if(!Array.isArray(releases) || !releases.length) return;
+
+          var best = null;
+          for(var r = 0; r < releases.length; r++){
+            var rel = releases[r];
+            if(!rel.assets || !rel.assets.length) continue;
+
+            var asset = rel.assets.find(function(a){
+              return a && a.name && String(a.name).toLowerCase().endsWith('.apk');
+            });
+
+            if(asset){
+              best = {
+                repo: repo.name,
+                owner: repo.owner,
+                url: asset.browser_download_url,
+                timestamp: rel.published_at || rel.created_at,
+                mode: 'scan'
+              };
+              break;
+            }
+          }
+
+          if(best){
+            found.push(best);
+            seen.add(key);
+          }
+        }catch(e){
+          logMsg('⚠️ Scan '+repo.owner+'/'+repo.name+' : '+e.message,'warn');
+        }
+      }));
+    }
+
+    // Tri par date
+    found.sort(function(a,b){
+      return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
+    });
+
+    // Mise en cache
+    apkCache.data = found;
+    apkCache.timestamp = Date.now();
+
+    if(rateLimitHit && found.length === 0){
+      logMsg('⚠️ Certains dépôts non scannés (token expiré ou rate limit)','warn');
+    }
+
+    renderApkCards(found, grid);
+
+  }catch(err){
+    grid.innerHTML = '<div class="apk-empty">Erreur lors du scan</div>';
+    logMsg('❌ Scan APK : '+err.message,'error');
+  }
+}
+function renderApkCards(list, grid){
+  if(!grid) return;
+
+  // Tri par date
+  list.sort(function(a,b){
+    return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
+  });
+
+  grid.innerHTML = '';
+
+  if(list.length === 0){
+    grid.innerHTML = '<div class="apk-empty">Aucune APK trouvée</div>';
+    return;
+  }
+
+  list.forEach(function(entry){
     var card = document.createElement('div');
     card.className = 'apk-card';
 
-    // Icône
     if(entry.owner && entry.repo){
       var img = document.createElement('img');
       img.className = 'apk-card-icon';
@@ -566,15 +694,12 @@ function renderApkGrid(){
       card.appendChild(fallback);
     }
 
-    // Nom
     var name = document.createElement('div');
     name.className = 'apk-card-name';
     name.textContent = entry.repo;
     card.appendChild(name);
 
-    // Clic normal → téléchargement
-    card.addEventListener('click', function(e){
-      // Évite le double déclenchement après un long press
+    card.addEventListener('click', function(){
       if(card.dataset.longPressed === '1'){
         card.dataset.longPressed = '0';
         return;
@@ -582,9 +707,7 @@ function renderApkGrid(){
       downloadApkFromHistory(entry);
     });
 
-    // Appui long → copier le lien
     var pressTimer = null;
-
     card.addEventListener('touchstart', function(){
       pressTimer = setTimeout(function(){
         card.dataset.longPressed = '1';
@@ -592,15 +715,9 @@ function renderApkGrid(){
       }, 500);
     }, {passive: true});
 
-    card.addEventListener('touchend', function(){
-      clearTimeout(pressTimer);
-    });
+    card.addEventListener('touchend', function(){ clearTimeout(pressTimer); });
+    card.addEventListener('touchmove', function(){ clearTimeout(pressTimer); });
 
-    card.addEventListener('touchmove', function(){
-      clearTimeout(pressTimer);
-    });
-
-    // Clic droit (desktop)
     card.addEventListener('contextmenu', function(e){
       e.preventDefault();
       copyApkLink(entry);
@@ -1053,6 +1170,10 @@ async function pasteCode(){try{var text=await navigator.clipboard.readText();if(
 
 function saveToHistory(repo,url,mode,owner){
   try{
+    // Invalider le cache APK pour que le build fraîchement publié apparaisse
+    apkCache.data = null;
+    apkCache.timestamp = 0;
+
     var history=JSON.parse(store.getItem(LS_KEYS.HISTORY))||[];
     var entry={
       repo:repo,
