@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon.png">
-<title>Apkortesttest</title>
+<title>APKor — Android Builder</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -89,6 +89,7 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
 .field.mono{ font-family:"Courier New",monospace; font-size:11px; }
 .field.token-color{ color:#fde047; }
 .field:disabled{ opacity:.5; cursor:not-allowed; }
+.invalid{ border-color:rgba(239,68,68,.85) !important; box-shadow:0 0 0 2px rgba(239,68,68,.12); }
 .icon-btn{ height:46px; width:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06); color:#94a3b8; font-size:16px; transition:.2s ease; }
 .icon-btn:active{ transform:scale(.9); background:rgba(255,255,255,.1); }
 .icon-btn.accent{ color:#fde047; border-color:rgba(250,204,21,.25); }
@@ -226,31 +227,6 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
 @media (min-width:600px){ .app-inner{ max-width:720px; } }
 </style>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<meta property="og:title" content="Apkortesttest">
-<meta name="twitter:title" content="Apkortesttest">
-<meta name="application-name" content="Apkortesttest">
-<meta name="apple-mobile-web-app-title" content="Apkortesttest">
-<meta name="description" content="Test">
-<meta property="og:description" content="Test">
-<meta name="twitter:description" content="Test">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="./icon.png">
-<meta property="og:image" content="https://mekeirish.github.io/Apkortesttest/icon.png">
-<meta name="twitter:image" content="https://mekeirish.github.io/Apkortesttest/icon.png">
-<meta name="twitter:card" content="summary">
-<meta property="og:url" content="https://mekeirish.github.io/Apkortesttest/">
-<link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1320x2868.png">
-<link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1206x2622.png">
-<link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1290x2796.png">
-<link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1179x2556.png">
-<link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1284x2778.png">
-<link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1170x2532.png">
-<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1242x2688.png">
-<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-828x1792.png">
-<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1125x2436.png">
-<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1242x2208.png">
-<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-750x1334.png">
-<link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-640x1136.png">
 </head>
 <body>
 
@@ -3218,6 +3194,1060 @@ function getNativeKitSteps(appId) {
 
 `;
 }
+function getSdkStep() {
+  return `      - name: 🎯 Cible Android 16 (API 36) pour Google Play
+        run: |
+          cd capacitor-app/android
+          if [ -f variables.gradle ]; then
+            T=$(grep -E "targetSdkVersion" variables.gradle | grep -oE "[0-9]+" | head -n 1 || true)
+            C=$(grep -E "compileSdkVersion" variables.gradle | grep -oE "[0-9]+" | head -n 1 || true)
+            echo "SDK avant : compile=$C target=$T"
+            if [ -z "$T" ] || [ "$T" -lt 36 ]; then
+              sed -i -E "s/targetSdkVersion[[:space:]]*=[[:space:]]*[0-9]+/targetSdkVersion = 36/" variables.gradle
+            fi
+            if [ -z "$C" ] || [ "$C" -lt 36 ]; then
+              sed -i -E "s/compileSdkVersion[[:space:]]*=[[:space:]]*[0-9]+/compileSdkVersion = 36/" variables.gradle
+            fi
+            echo "" >> gradle.properties
+            echo "android.suppressUnsupportedCompileSdk=36" >> gradle.properties
+            grep -E "SdkVersion" variables.gradle || true
+          else
+            echo "variables.gradle introuvable : cible SDK inchangee"
+          fi
+
+`;
+}
+function getPlaySteps(repoName) {
+  return `      - name: Versioning et Signature
+        run: |
+          cd capacitor-app/android/app
+          sed -i "s/versionCode 1/versionCode \${{ github.run_number }}/g" build.gradle
+
+      - name: 🔑 Clé de signature Play Store
+        continue-on-error: true
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          USER_KEYSTORE: \${{ secrets.KEYSTORE_BASE64 }}
+          USER_STORE_PASS: \${{ secrets.KEYSTORE_PASSWORD }}
+          USER_KEY_ALIAS: \${{ secrets.KEY_ALIAS }}
+          USER_KEY_PASS: \${{ secrets.KEY_PASSWORD }}
+        run: |
+          cd capacitor-app/android/app
+          API="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          H1="Authorization: Bearer $GH_TOKEN"
+          H2="Accept: application/vnd.github+json"
+          if [ -n "$USER_KEYSTORE" ]; then
+            echo "Cle fournie par les secrets du depot"
+            echo "$USER_KEYSTORE" | base64 -d > release.keystore
+            STORE_PASS="$USER_STORE_PASS"
+            KEY_ALIAS="$USER_KEY_ALIAS"
+            KEY_PASS="$USER_KEY_PASS"
+          else
+            REL=""
+            P=1
+            while [ "$P" -le 20 ]; do
+              PAGE=$(curl -s -H "$H1" -H "$H2" "$API/releases?per_page=100&page=$P")
+              REL=$(echo "$PAGE" | jq -c '[.[] | select(.draft == true and .tag_name == "apkor-keystore")] | .[0] // empty')
+              N=$(echo "$PAGE" | jq 'length')
+              if [ -n "$REL" ] || [ "$N" -lt 100 ]; then break; fi
+              P=$((P+1))
+            done
+            if [ -n "$REL" ]; then
+              RID=$(echo "$REL" | jq -r '.id')
+              AID=$(echo "$REL" | jq -r '[.assets[] | select(.name == "apkor-upload.keystore")] | .[0].id // empty')
+              BODY=$(echo "$REL" | jq -r '.body // ""')
+              if [ -z "$AID" ]; then
+                echo "Brouillon de cle incomplet : suppression et regeneration"
+                curl -s -X DELETE -H "$H1" -H "$H2" "$API/releases/$RID" > /dev/null
+                REL=""
+              fi
+            fi
+            if [ -n "$REL" ]; then
+              echo "Cle de signature existante reutilisee"
+              STORE_PASS=$(echo "$BODY" | grep -o "password=[0-9a-f]*" | head -n 1 | cut -d= -f2)
+              echo "::add-mask::$STORE_PASS"
+              KEY_ALIAS="upload"
+              KEY_PASS="$STORE_PASS"
+              curl -sL -H "$H1" -H "Accept: application/octet-stream" "$API/releases/assets/$AID" -o release.keystore
+            else
+              echo "Creation d'une nouvelle cle d'envoi Play Store"
+              STORE_PASS=$(openssl rand -hex 16)
+              echo "::add-mask::$STORE_PASS"
+              KEY_ALIAS="upload"
+              KEY_PASS="$STORE_PASS"
+              keytool -genkeypair -keystore release.keystore -storetype PKCS12 -alias upload -keyalg RSA -keysize 2048 -validity 10000 -storepass "$STORE_PASS" -keypass "$STORE_PASS" -dname "CN=APKor Upload Key, O=APKor, C=FR"
+              jq -n --arg b "ATTENTION cle privee - ne pas partager - password=$STORE_PASS alias=upload" '{tag_name:"apkor-keystore",name:"APKor - cle de signature (prive, ne pas supprimer)",body:$b,draft:true,prerelease:true}' > rel.json
+              NEW=$(curl -s -X POST -H "$H1" -H "$H2" "$API/releases" -d @rel.json)
+              NID=$(echo "$NEW" | jq -r '.id // empty')
+              rm -f rel.json
+              [ -n "$NID" ] || { echo "Creation du brouillon impossible"; exit 1; }
+              curl -s -f -X POST -H "$H1" -H "$H2" -H "Content-Type: application/octet-stream" --data-binary @release.keystore "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$NID/assets?name=apkor-upload.keystore" > /dev/null
+            fi
+          fi
+          keytool -list -keystore release.keystore -storepass "$STORE_PASS" -alias "$KEY_ALIAS" > /dev/null
+          echo "Empreinte du certificat (Play Console) :"
+          keytool -list -v -keystore release.keystore -storepass "$STORE_PASS" -alias "$KEY_ALIAS" | grep -E "SHA1:|SHA256:" || true
+          echo "APKOR_STORE_PASS=$STORE_PASS" >> "$GITHUB_ENV"
+          echo "APKOR_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "APKOR_KEY_PASS=$KEY_PASS" >> "$GITHUB_ENV"
+          cat >> build.gradle << 'GRADLEEOF'
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file("release.keystore")
+                      storePassword System.getenv("APKOR_STORE_PASS")
+                      keyAlias System.getenv("APKOR_KEY_ALIAS")
+                      keyPassword System.getenv("APKOR_KEY_PASS")
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                  }
+              }
+              lint {
+                  checkReleaseBuilds false
+                  abortOnError false
+              }
+          }
+          GRADLEEOF
+          echo "APKOR_SIGNED=1" >> "$GITHUB_ENV"
+
+      - name: Résolution conflits Kotlin
+        run: |
+          echo "configurations.all { exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'; exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8' }" >> capacitor-app/android/app/build.gradle
+
+      - name: Compilation APK
+        run: |
+          cd capacitor-app/android
+          chmod +x gradlew
+          if [ "$APKOR_SIGNED" = "1" ]; then
+            ./gradlew assembleRelease
+            ./gradlew bundleRelease || echo "AAB non genere (APK seul)"
+          else
+            echo "Signature indisponible : build debug (APK seul)"
+            ./gradlew assembleDebug
+          fi
+
+      - name: Renommer APK
+        run: |
+          OUT=capacitor-app/android/app/build/outputs
+          if [ "$APKOR_SIGNED" = "1" ] && [ -f $OUT/apk/release/app-release.apk ]; then
+            mv $OUT/apk/release/app-release.apk capacitor-app/${repoName}.apk
+          else
+            mv $OUT/apk/debug/app-debug.apk capacitor-app/${repoName}.apk
+          fi
+          if [ -f $OUT/bundle/release/app-release.aab ]; then
+            mv $OUT/bundle/release/app-release.aab capacitor-app/${repoName}.aab
+          fi
+
+`;
+}
+const PLAY_MODE_KEY = 'apkor_play_mode';
+function getPlayModeStep() {
+  return `      - name: 🛍️ Mode Play Store (permissions restreintes)
+        run: |
+          cd capacitor-app
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          for P in USE_FULL_SCREEN_INTENT USE_EXACT_ALARM SCHEDULE_EXACT_ALARM REQUEST_IGNORE_BATTERY_OPTIMIZATIONS; do
+            if grep -q "android.permission.$P" "$MANIFEST"; then
+              sed -i "/android.permission.$P/d" "$MANIFEST"
+              echo "Retiree (restreinte par Google Play) : $P"
+            fi
+          done
+          for P in FOREGROUND_SERVICE_MEDIA_PROJECTION FOREGROUND_SERVICE_MICROPHONE; do
+            if grep -q "android.permission.$P" "$MANIFEST"; then
+              echo "::warning::$P : declaration obligatoire dans la Play Console (Contenu de l'appli, Services au premier plan), avec video de demonstration"
+            fi
+          done
+          if grep -q "android:debuggable" "$MANIFEST"; then
+            echo "::warning::android:debuggable present dans le manifeste"
+          fi
+          echo "Permissions finales :"
+          grep -o 'android.permission.[A-Z_]*' "$MANIFEST" | sort -u
+
+`;
+}
+function getPlayCheckStep(repoName) {
+  return `      - name: 🛍️ Contrôle Play Store (AAB signé)
+        run: |
+          if [ "$APKOR_SIGNED" != "1" ]; then
+            echo "ERREUR Mode Play Store : signature indisponible (APK debug), Google Play refuse ce fichier"
+            exit 1
+          fi
+          if [ ! -f capacitor-app/${repoName}.aab ]; then
+            echo "ERREUR Mode Play Store : AAB absent"
+            exit 1
+          fi
+          ls -la capacitor-app/${repoName}.aab
+          echo "AAB signe et pret pour la Play Console"
+
+`;
+}
+function injectPlayToggle(){
+  if(byId('playModeWrap'))return;
+  var anchor=byId('appIdField');
+  if(!anchor||!anchor.parentNode)return;
+  var wrap=document.createElement('div');
+  wrap.className='field-wrap';
+  wrap.id='playModeWrap';
+  wrap.innerHTML='<label class="icon-area" style="cursor:pointer;">'
+    +'<input type="checkbox" id="playModeInput" style="width:20px;height:20px;flex:0 0 20px;accent-color:#facc15;">'
+    +'<span style="min-width:0;flex:1;">'
+    +'<span class="info-item-title" style="display:block;margin:0 0 2px 0;">🛍️ Mode Play Store</span>'
+    +'<span class="info-item-desc" style="display:block;">Retire les permissions restreintes par Google et exige un AAB signé.</span>'
+    +'</span></label>'
+    +'<div class="icon-btn-row" style="margin-top:6px;"><button type="button" class="icon-btn-sm accent" id="playPackBtn">📁 Dossier Play Store</button></div>';
+  anchor.parentNode.insertBefore(wrap,anchor.nextSibling);
+  var cb=byId('playModeInput');
+  cb.checked=store.getItem(PLAY_MODE_KEY)==='1';
+  cb.addEventListener('change',function(){
+    store.setItem(PLAY_MODE_KEY,cb.checked?'1':'0');
+    showSaveIndicator();
+    haptic(6);
+    logMsg(cb.checked?'🛍️ Mode Play Store activé : permissions restreintes retirées, AAB signé exigé':'🛍️ Mode Play Store désactivé','info');
+  });
+  byId('playPackBtn').addEventListener('click',function(){generatePlayPack();});
+}
+injectPlayToggle();
+const PLAY_EMAIL_KEY = 'apkor_play_email';
+let playPackBusy = false;
+function blobToDataUrl(blob){
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onload=function(){res(String(fr.result));};
+    fr.onerror=function(){rej(new Error('Lecture impossible'));};
+    fr.readAsDataURL(blob);
+  });
+}
+function loadImageEl(src){
+  return new Promise(function(res,rej){
+    var i=new Image();
+    i.onload=function(){res(i);};
+    i.onerror=function(){rej(new Error('Icône illisible'));};
+    i.src=src;
+  });
+}
+async function fetchRepoRaw(token,owner,repo,branch,path,asBlob){
+  try{
+    var r=await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/contents/'+path+'?ref='+encodeURIComponent(branch),{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github.raw+json'}});
+    if(!r.ok)return null;
+    return asBlob?await r.blob():await r.text();
+  }catch(e){return null;}
+}
+function detectPlayFeatures(code){
+  var t=String(code||'');
+  return {
+    mic:/getUserMedia/.test(t)&&/audio\s*:\s*(true|\{)/.test(t),
+    cam:/getUserMedia/.test(t)&&/video\s*:\s*(true|\{)/.test(t),
+    geo:/navigator\.geolocation|getCurrentPosition|watchPosition/.test(t),
+    notif:/new Notification\(|Notification\.requestPermission|showNotification|WakeNotify/.test(t),
+    vib:/navigator\.vibrate|\.vibrate\(/.test(t),
+    call:/passerAppelDirect/.test(t),
+    internal:/Plugins[.]InternalAudio/.test(t),
+    net:/fetch\(|XMLHttpRequest|WebSocket|EventSource|https?:\/\/(?!localhost)/.test(t)
+  };
+}
+function renderPlayIcon(img){
+  var c=document.createElement('canvas');
+  c.width=512;
+  c.height=512;
+  var x=c.getContext('2d');
+  x.fillStyle='#ffffff';
+  x.fillRect(0,0,512,512);
+  x.drawImage(img,0,0,512,512);
+  return c.toDataURL('image/png');
+}
+function renderFeatureGraphic(img,name){
+  var s=document.createElement('canvas');
+  s.width=16;
+  s.height=16;
+  var sx=s.getContext('2d');
+  sx.drawImage(img,0,0,16,16);
+  var px=sx.getImageData(0,0,16,16).data;
+  var r=0,g=0,b=0,n=0;
+  for(var i=0;i<px.length;i+=4){r+=px[i];g+=px[i+1];b+=px[i+2];n++;}
+  r=r/n;g=g/n;b=b/n;
+  var c=document.createElement('canvas');
+  c.width=1024;
+  c.height=500;
+  var x=c.getContext('2d');
+  var grad=x.createLinearGradient(0,0,1024,500);
+  grad.addColorStop(0,'rgb('+Math.round(r*0.25)+','+Math.round(g*0.25)+','+Math.round(b*0.25)+')');
+  grad.addColorStop(1,'rgb('+Math.round(r*0.55)+','+Math.round(g*0.55)+','+Math.round(b*0.55)+')');
+  x.fillStyle=grad;
+  x.fillRect(0,0,1024,500);
+  var size=300,ix=90,iy=100,rad=64;
+  x.save();
+  x.beginPath();
+  x.moveTo(ix+rad,iy);
+  x.arcTo(ix+size,iy,ix+size,iy+size,rad);
+  x.arcTo(ix+size,iy+size,ix,iy+size,rad);
+  x.arcTo(ix,iy+size,ix,iy,rad);
+  x.arcTo(ix,iy,ix+size,iy,rad);
+  x.closePath();
+  x.clip();
+  x.fillStyle='#ffffff';
+  x.fillRect(ix,iy,size,size);
+  x.drawImage(img,ix,iy,size,size);
+  x.restore();
+  var maxW=1024-440-70;
+  var fs=68,lines=[String(name)];
+  for(;fs>=34;fs-=4){
+    x.font='800 '+fs+'px Inter, Arial, sans-serif';
+    var words=String(name).split(/\s+/);
+    lines=[];
+    var cur='';
+    for(var k=0;k<words.length;k++){
+      var test=cur?cur+' '+words[k]:words[k];
+      if(cur&&x.measureText(test).width>maxW){lines.push(cur);cur=words[k];}
+      else cur=test;
+    }
+    if(cur)lines.push(cur);
+    var widest=0;
+    for(var m=0;m<lines.length;m++){widest=Math.max(widest,x.measureText(lines[m]).width);}
+    if(lines.length<=3&&widest<=maxW)break;
+  }
+  x.fillStyle='#ffffff';
+  x.textBaseline='middle';
+  x.textAlign='left';
+  var lh=fs*1.15;
+  var startY=250-((lines.length-1)*lh)/2;
+  for(var q=0;q<lines.length;q++){x.fillText(lines[q],440,startY+q*lh);}
+  return c.toDataURL('image/png');
+}
+function buildPrivacyHtml(c){
+  var e=escapeHtml;
+  var f=c.features;
+  var perms=[];
+  if(f.mic)perms.push("<li><b>Microphone</b> : utilisé uniquement pour les fonctions audio de l'application, lorsque vous les lancez.</li>");
+  if(f.internal)perms.push("<li><b>Capture du son de l'appareil</b> : activée seulement après votre accord dans la fenêtre système Android, pour enregistrer le son lu par l'appareil.</li>");
+  if(f.cam)perms.push("<li><b>Caméra</b> : utilisée uniquement lorsque vous lancez une fonction qui en a besoin.</li>");
+  if(f.geo)perms.push("<li><b>Localisation</b> : utilisée uniquement pour les fonctions qui en ont besoin.</li>");
+  if(f.notif)perms.push("<li><b>Notifications</b> : pour vous envoyer les alertes et rappels de l'application.</li>");
+  if(f.vib)perms.push("<li><b>Vibreur</b> : retours haptiques.</li>");
+  if(f.call)perms.push("<li><b>Appels téléphoniques</b> : uniquement lorsque vous le demandez.</li>");
+  var permHtml;
+  if(!c.analysed){
+    permHtml="<p>Selon les fonctions utilisées, l'application peut demander des autorisations (par exemple microphone ou notifications). Elles ne servent qu'à la fonction concernée.</p>";
+  }else if(perms.length){
+    permHtml='<ul>'+perms.join('')+'</ul>';
+  }else{
+    permHtml="<p>L'application ne demande aucune autorisation sensible.</p>";
+  }
+  var netHtml=(f.net||!c.analysed)?"<h2>Services externes</h2><p>L'application peut se connecter à Internet pour fonctionner (chargement de ressources ou échanges avec des services tiers nécessaires à ses fonctionnalités). Ces services appliquent leur propre politique de confidentialité.</p>":'';
+  var dataHtml=c.dataOut
+    ?"<p>L'application ne demande ni compte ni information d'identité. Certaines fonctions envoient des données (par exemple des contenus que vous créez ou choisissez de partager) vers un serveur ou un service tiers, uniquement pour fournir la fonction demandée. Le service concerné applique sa propre politique de confidentialité.</p>"
+    :"<p>L'application ne demande ni compte ni information d'identité. Les réglages et les contenus créés dans l'application sont enregistrés sur votre appareil.</p>";
+  var shareHtml=c.ads
+    ?"<p>L'application affiche des publicités fournies par un service tiers, qui peut utiliser l'identifiant publicitaire de votre appareil. Vous pouvez le réinitialiser ou le désactiver dans les réglages d'Android. Vos données ne sont pas vendues.</p>"
+    :"<p>Aucune donnée n'est vendue ni utilisée à des fins publicitaires.</p>";
+  var d=new Date().toLocaleDateString('fr-FR',{year:'numeric',month:'long',day:'numeric'});
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="fr">',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<meta name="viewport" content="width=device-width,initial-scale=1">',
+    '<title>Politique de confidentialité - '+e(c.name)+'</title>',
+    '<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:720px;margin:0 auto;padding:24px;line-height:1.6;color:#1f2937}h1{font-size:1.6rem}h2{font-size:1.15rem;margin-top:1.8rem}</style>',
+    '</head>',
+    '<body>',
+    '<h1>Politique de confidentialité</h1>',
+    '<p>Application : <b>'+e(c.name)+'</b><br>Éditeur : '+e(c.owner)+'<br>Dernière mise à jour : '+e(d)+'</p>',
+    '<h2>Données personnelles</h2>',
+    dataHtml,
+    "<h2>Autorisations</h2>",
+    permHtml,
+    "<p>Vous pouvez retirer chaque autorisation à tout moment dans les réglages d'Android.</p>",
+    netHtml,
+    '<h2>Partage des données</h2>',
+    shareHtml,
+    '<h2>Conservation et suppression</h2>',
+    "<p>Les données locales sont supprimées lorsque vous effacez les données de l'application ou que vous la désinstallez.</p>",
+    '<h2>Enfants</h2>',
+    "<p>L'application ne s'adresse pas aux enfants de moins de 13 ans.</p>",
+    '<h2>Contact</h2>',
+    '<p>Pour toute question : <a href="mailto:'+e(c.email)+'">'+e(c.email)+'</a></p>',
+    '<h2>Modifications</h2>',
+    '<p>Cette politique peut évoluer. La date de mise à jour ci-dessus indique la dernière version.</p>',
+    '</body>',
+    '</html>'
+  ].join('\n');
+}
+function buildPlayDossier(c){
+  var f=c.features;
+  var L=[];
+  var nShots=c.shotsNew>=2?c.shotsNew:c.shotsRepo;
+  L.push('# Dossier Play Store - '+c.name);
+  L.push('');
+  L.push('Généré par APKor à partir des informations que tu as saisies.');
+  L.push('');
+  L.push('## 1. Fichiers');
+  L.push('- **AAB signé** : dernière release du dépôt, fichier `'+c.repo+'.aab` (build lancé avec le Mode Play Store coché) : https://github.com/'+c.owner+'/'+c.repo+'/releases');
+  L.push('- **Icône 512×512** : `play-store/icon-512.png`');
+  L.push('- **Image de présentation 1024×500** : `play-store/feature-graphic-1024x500.jpg`');
+  L.push('- **Captures d\'écran téléphone ('+nShots+')** : `play-store/screenshots/` (JPEG, 2 à 8 par appareil)');
+  L.push('- **ID du package** : `'+c.appId+'` (impossible à changer après publication)');
+  L.push('');
+  L.push('## 2. Politique de confidentialité');
+  L.push('- URL à coller dans la Play Console : '+c.pagesUrl);
+  L.push('- Disponible 1 à 3 minutes après la création de GitHub Pages.');
+  L.push('- ✏️ Relis-la : elle est générée à partir d\'un modèle'+(c.analysed?' et des fonctions détectées dans ton code':' (le code n\'a pas pu être analysé, version générique)')+'. Elle doit correspondre exactement au comportement réel de l\'appli.');
+  L.push('');
+  L.push('## 3. Fiche');
+  L.push('- **Titre (30 caractères max)** : '+String(c.name).slice(0,30));
+  L.push('- **Description courte (80 max)** : '+c.shortDesc);
+  L.push('- **Description complète (4000 max)** :');
+  String(c.fullDesc).split(/\r?\n/).forEach(function(l){L.push('> '+l);});
+  L.push('- **Catégorie** : '+c.category);
+  L.push('- **Email de contact** : '+c.email);
+  L.push('- **Public cible** : suggestion, 18 ans et plus, pour éviter les exigences liées aux applications pour enfants');
+  L.push('- **Publicités** : '+(c.ads?'oui, à déclarer dans Contenu de l\'appli, Annonces':'non'));
+  L.push('');
+  L.push('## 4. Sécurité des données');
+  if(!c.analysed){
+    L.push('- Code non analysé : réponds selon ce que fait vraiment ton appli.');
+  }
+  if(c.dataOut){
+    L.push('- Tu as indiqué que des données quittent l\'appareil : déclare chaque type concerné comme « collecté » ou « partagé » et précise à quoi il sert.');
+  }else{
+    L.push('- Tu as indiqué que tout reste sur l\'appareil : réponds « aucune donnée collectée ni partagée ».');
+  }
+  if(f.mic||f.internal)L.push('- **Audio** : si le son est envoyé à un serveur (hébergement de fichiers, par exemple), il est « collecté » ; sinon non.');
+  if(f.cam)L.push('- **Photos et vidéos** : même logique que l\'audio.');
+  if(f.geo)L.push('- **Localisation** : si elle quitte l\'appareil, déclare-la comme collectée.');
+  if(f.net)L.push('- **Réseau** : l\'appli communique avec Internet. Vérifie ce qui est envoyé et à qui.');
+  L.push('- **Identifiants publicitaires** : '+(c.ads?'oui, une régie publicitaire est utilisée':'non'));
+  L.push('');
+  L.push('## 5. Déclarations spéciales');
+  if(f.mic)L.push('- **Service au premier plan (microphone)** : à déclarer dans Contenu de l\'appli, avec une vidéo de démonstration.');
+  if(f.internal)L.push('- **Service au premier plan (capture d\'écran / MediaProjection)** : déclaration et vidéo obligatoires, la capture du son interne est très surveillée.');
+  if(f.notif)L.push('- **Notifications** : rien à déclarer. En Mode Play Store, les alarmes exactes et le plein écran sont retirés.');
+  L.push('- **Classification du contenu** : remplis le questionnaire honnêtement ; pour un outil sans violence ni contenu sensible, le résultat est généralement tout public.');
+  L.push('');
+  L.push('## 6. Calendrier');
+  L.push('- Compte développeur **personnel** créé après le 13 novembre 2023 : test fermé avec **12 testeurs inscrits pendant 14 jours d\'affilée** avant de demander l\'accès à la production.');
+  L.push('- Prévois environ 3 semaines pour la première publication.');
+  L.push('- Compte organisation : pas de test obligatoire, mais numéro D-U-N-S et vérification.');
+  return L.join('\n');
+}
+async function pushFileToRepo(token,owner,repo,branch,path,b64,message){
+  var url='https://api.github.com/repos/'+owner+'/'+repo+'/contents/'+path;
+  var sha=null;
+  var g=await fetch(url+'?ref='+encodeURIComponent(branch),{headers:{'Authorization':'Bearer '+token}});
+  if(g.ok){
+    var d=await g.json();
+    sha=d.sha;
+  }else if(g.status!==404){
+    var e0=await g.json().catch(function(){return{};});
+    throw new Error(e0.message||'Erreur '+g.status);
+  }
+  var body={message:message,content:b64,branch:branch};
+  if(sha)body.sha=sha;
+  var p=await fetch(url,{method:'PUT',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!p.ok){
+    var e1=await p.json().catch(function(){return{};});
+    throw new Error(e1.message||'Erreur '+p.status);
+  }
+  return true;
+}
+async function enablePages(token,owner,repo,branch){
+  try{
+    var r=await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/pages',{method:'POST',headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({source:{branch:branch,path:'/'}})});
+    if(r.status===201||r.status===409)return {ok:true,created:r.status===201};
+    var e=await r.json().catch(function(){return{};});
+    return {ok:false,message:e.message||('Erreur '+r.status)};
+  }catch(err){
+    return {ok:false,message:err.message};
+  }
+}
+const PLAY_CATEGORIES = ['Art et design','Auto et véhicules','Beauté','Livres et références','Entreprise','Bandes dessinées','Communication','Rencontres','Éducation','Divertissement','Événements','Finance','Cuisine et boissons','Santé et remise en forme','Maison','Style de vie','Cartes et navigation','Médical','Musique et audio','Actualités et magazines','Parentalité','Personnalisation','Photographie','Productivité','Shopping','Social','Sports','Outils','Voyages et infos locales','Lecteurs et éditeurs vidéo','Météo'];
+let playShots = [];
+function playFormKey(){
+  return 'apkor_play_form_'+directRepoName(byId('appNameInput').value);
+}
+function readPlayForm(){
+  return {
+    email:byId('playEmail').value.trim(),
+    short:byId('playShort').value.trim(),
+    full:byId('playFull').value.trim(),
+    category:byId('playCategory').value,
+    ads:byId('playAds').value,
+    dataOut:byId('playDataOut').value,
+    privacyOk:byId('playPrivacyOk').checked
+  };
+}
+function savePlayForm(){
+  try{
+    if(!byId('playEmail'))return;
+    var f=readPlayForm();
+    store.setItem(playFormKey(),JSON.stringify({short:f.short,full:f.full,category:f.category,ads:f.ads,dataOut:f.dataOut}));
+    if(f.email)store.setItem(PLAY_EMAIL_KEY,f.email);
+    showSaveIndicator();
+  }catch(e){}
+}
+function loadPlayForm(){
+  var d={};
+  try{d=JSON.parse(store.getItem(playFormKey()))||{};}catch(e){d={};}
+  byId('playEmail').value=store.getItem(PLAY_EMAIL_KEY)||'';
+  byId('playShort').value=d.short||'';
+  byId('playFull').value=d.full||'';
+  byId('playCategory').value=d.category||'';
+  byId('playAds').value=d.ads||'';
+  byId('playDataOut').value=d.dataOut||'';
+  byId('playPrivacyOk').checked=false;
+  ['playEmail','playShort','playFull','playCategory','playAds','playDataOut','playPrivacyBox','playShotsBox'].forEach(function(id){markPlayField(id,false);});
+  updatePlayCounters();
+}
+function markPlayField(id,bad){
+  var el=byId(id);
+  if(!el)return;
+  el.classList.toggle('invalid',!!bad);
+}
+function updatePlayCounters(){
+  var s=byId('playShort'),f=byId('playFull');
+  if(s&&byId('playShortCount'))byId('playShortCount').textContent=s.value.length+' / 80';
+  if(f&&byId('playFullCount'))byId('playFullCount').textContent=f.value.length+' / 4000 · minimum 80';
+}
+function validatePlayForm(f){
+  var bad=[];
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email))bad.push({id:'playEmail',msg:'Email de contact invalide'});
+  if(!f.short||f.short.length>80)bad.push({id:'playShort',msg:'Description courte : 1 à 80 caractères'});
+  if(f.full.length<80||f.full.length>4000)bad.push({id:'playFull',msg:'Description complète : 80 à 4000 caractères'});
+  if(!f.category)bad.push({id:'playCategory',msg:'Choisis une catégorie'});
+  if(!f.ads)bad.push({id:'playAds',msg:"Indique si l'appli contient des publicités"});
+  if(!f.dataOut)bad.push({id:'playDataOut',msg:"Indique si des données quittent l'appareil"});
+  if(!f.privacyOk)bad.push({id:'playPrivacyBox',msg:'Coche la relecture de la politique de confidentialité'});
+  return bad;
+}
+function fitShotCanvas(img){
+  var w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+  var b=document.createElement('canvas');
+  b.width=w;
+  b.height=h;
+  var bx=b.getContext('2d');
+  bx.fillStyle='#ffffff';
+  bx.fillRect(0,0,w,h);
+  bx.drawImage(img,0,0,w,h);
+  var mn=Math.min(w,h),mx=Math.max(w,h);
+  var out=b,padded=false;
+  if(mx/mn>2){
+    var portrait=h>=w;
+    var nw=portrait?Math.ceil(h/2):w;
+    var nh=portrait?h:Math.ceil(w/2);
+    var offX=Math.floor((nw-w)/2),offY=Math.floor((nh-h)/2);
+    var p1=portrait?bx.getImageData(0,Math.floor(h/2),1,1).data:bx.getImageData(Math.floor(w/2),0,1,1).data;
+    var p2=portrait?bx.getImageData(w-1,Math.floor(h/2),1,1).data:bx.getImageData(Math.floor(w/2),h-1,1,1).data;
+    var o=document.createElement('canvas');
+    o.width=nw;
+    o.height=nh;
+    var ox=o.getContext('2d');
+    ox.fillStyle='rgb('+p1[0]+','+p1[1]+','+p1[2]+')';
+    if(portrait)ox.fillRect(0,0,Math.floor(nw/2),nh);else ox.fillRect(0,0,nw,Math.floor(nh/2));
+    ox.fillStyle='rgb('+p2[0]+','+p2[1]+','+p2[2]+')';
+    if(portrait)ox.fillRect(Math.floor(nw/2),0,nw-Math.floor(nw/2),nh);else ox.fillRect(0,Math.floor(nh/2),nw,nh-Math.floor(nh/2));
+    ox.drawImage(b,offX,offY);
+    out=o;
+    padded=true;
+  }
+  var big=Math.max(out.width,out.height);
+  if(big>3840){
+    var k=3840/big;
+    var s=document.createElement('canvas');
+    s.width=Math.round(out.width*k);
+    s.height=Math.round(out.height*k);
+    s.getContext('2d').drawImage(out,0,0,s.width,s.height);
+    out=s;
+  }
+  return {canvas:out,padded:padded};
+}
+async function addPlayShots(files){
+  var list=Array.prototype.slice.call(files||[]);
+  for(var i=0;i<list.length;i++){
+    if(playShots.length>=8){notify('Maximum 8 captures','warning');break;}
+    var file=list[i];
+    try{
+      var src=await blobToDataUrl(file);
+      var img=await loadImageEl(src);
+      var w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+      if(Math.min(w,h)<320)throw new Error('image trop petite (320 px minimum)');
+      var res=fitShotCanvas(img);
+      var out=res.canvas.toDataURL('image/jpeg',0.92);
+      if(out.length*0.75>8*1024*1024)throw new Error('fichier trop lourd (8 Mo maximum)');
+      playShots.push({dataURL:out,w:res.canvas.width,h:res.canvas.height});
+      if(res.padded)logMsg('🖼️ « '+file.name+' » trop allongée : bandes ajoutées pour respecter le format 2:1 maximum','info');
+    }catch(err){
+      logMsg('⚠️ Capture « '+file.name+' » refusée : '+err.message,'warn');
+      notify('« '+file.name+' » refusée : '+err.message,'warning');
+    }
+  }
+  renderPlayShots();
+}
+function renderPlayShots(){
+  var box=byId('playShotsGrid');
+  if(!box)return;
+  box.innerHTML='';
+  playShots.forEach(function(s,i){
+    var d=document.createElement('div');
+    d.style.cssText='position:relative;aspect-ratio:9/16;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.3);';
+    var im=document.createElement('img');
+    im.src=s.dataURL;
+    im.style.cssText='width:100%;height:100%;object-fit:cover;';
+    var x=document.createElement('button');
+    x.type='button';
+    x.textContent='✕';
+    x.style.cssText='position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:8px;background:rgba(0,0,0,.65);color:#f87171;font-size:12px;border:1px solid rgba(255,255,255,.15);';
+    x.addEventListener('click',function(){playShots.splice(i,1);renderPlayShots();});
+    d.appendChild(im);
+    d.appendChild(x);
+    box.appendChild(d);
+  });
+  var cnt=byId('playShotsCount');
+  if(cnt){
+    cnt.textContent=playShots.length+' / 8 · minimum 2';
+    cnt.style.color=playShots.length>=2?'#86efac':'#fcd34d';
+  }
+  if(playShots.length>=2)markPlayField('playShotsBox',false);
+}
+async function pngToJpegData(dataUrl){
+  var im=await loadImageEl(dataUrl);
+  var c=document.createElement('canvas');
+  c.width=im.naturalWidth||im.width;
+  c.height=im.naturalHeight||im.height;
+  var x=c.getContext('2d');
+  x.fillStyle='#ffffff';
+  x.fillRect(0,0,c.width,c.height);
+  x.drawImage(im,0,0);
+  return c.toDataURL('image/jpeg',0.92);
+}
+async function countRepoShots(token,owner,repo,branch){
+  try{
+    var u='https://api.github.com/repos/'+owner+'/'+repo+'/contents/play-store/screenshots'+(branch?'?ref='+encodeURIComponent(branch):'');
+    var r=await fetch(u,{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}});
+    if(!r.ok)return 0;
+    var d=await r.json();
+    return Array.isArray(d)?d.filter(function(x){return x&&/\.(jpe?g|png)$/i.test(String(x.name));}).length:0;
+  }catch(e){return 0;}
+}
+function openPlayForm(){
+  injectPlaySheet();
+  loadPlayForm();
+  var st=byId('playIconStatus');
+  if(st){
+    if(newIconData&&newIconData.dataURL){
+      st.textContent='✅ Icône choisie';
+      st.style.color='#86efac';
+    }else if(existingIconData&&existingIconData.dataURL){
+      st.textContent='✅ Icône du projet existante';
+      st.style.color='#86efac';
+    }else{
+      st.textContent="⚠️ Aucune icône détectée : choisis-en une dans l'écran principal (obligatoire, sauf si le dépôt en contient déjà une)";
+      st.style.color='#fcd34d';
+    }
+  }
+  renderPlayShots();
+  openSheet('play');
+}
+async function submitPlayPack(){
+  if(playPackBusy)return;
+  var token=byId('ghToken').value.trim();
+  if(!token||token.length<20){notify('Token requis','danger');return;}
+  var appName=byId('appNameInput').value.trim();
+  if(!appName){notify("Choisis d'abord le nom de l'application",'warning');return;}
+  var f=readPlayForm();
+  savePlayForm();
+  var bad=validatePlayForm(f);
+  ['playEmail','playShort','playFull','playCategory','playAds','playDataOut','playPrivacyBox'].forEach(function(id){markPlayField(id,false);});
+  bad.forEach(function(b){markPlayField(b.id,true);});
+  if(bad.length){
+    notify(bad[0].msg,'warning');
+    var first=byId(bad[0].id);
+    if(first&&first.scrollIntoView)first.scrollIntoView({block:'center',behavior:'smooth'});
+    return;
+  }
+  playPackBusy=true;
+  var sb=byId('playSubmitBtn'),pb=byId('playPackBtn');
+  if(sb)sb.disabled=true;
+  if(pb)pb.disabled=true;
+  try{
+    var pre=(currentMode==='direct')?{owner:SANDBOX_OWNER,repo:directRepoName(appName),branch:''}:{owner:currentOwner,repo:currentRepo,branch:currentBranch};
+    var repoShots=0;
+    if(playShots.length<2){
+      repoShots=await countRepoShots(token,pre.owner,pre.repo,pre.branch);
+      if(repoShots<2){
+        markPlayField('playShotsBox',true);
+        notify("Ajoute au moins 2 captures d'écran",'warning');
+        var sbx=byId('playShotsBox');
+        if(sbx&&sbx.scrollIntoView)sbx.scrollIntoView({block:'center',behavior:'smooth'});
+        return;
+      }
+      logMsg('🖼️ Captures déjà présentes dans le dépôt : '+repoShots,'info');
+    }
+    closeSheet('play');
+    logMsg('📁 Génération du dossier Play Store...','highlight');
+    var owner,repo,branch;
+    if(currentMode==='direct'){
+      var info=await ensureDirectRepo(token,directRepoName(appName));
+      owner=info.owner;repo=info.repo;branch=info.branch;
+    }else{
+      owner=currentOwner;repo=currentRepo;branch=currentBranch;
+    }
+    var imgSrc=(newIconData&&newIconData.dataURL)?newIconData.dataURL:null;
+    if(!imgSrc){
+      var ib=await fetchRepoRaw(token,owner,repo,branch,'icon.png',true);
+      if(ib)imgSrc=await blobToDataUrl(ib);
+    }
+    if(!imgSrc)throw new Error('Aucune icône : choisis-en une avant de générer le dossier');
+    var img=await loadImageEl(imgSrc);
+    var iconUrl=renderPlayIcon(img);
+    var featUrl=await pngToJpegData(renderFeatureGraphic(img,appName));
+    logMsg('🖼️ Icône 512 et image 1024×500 générées','success');
+    var code=(currentMode==='direct')?byId('codeInput').value:'';
+    if(!code.trim()){
+      var t=await fetchRepoRaw(token,owner,repo,branch,'index.html',false);
+      code=t||'';
+    }
+    var analysed=!!code.trim();
+    if(!analysed)logMsg('⚠️ Code non analysé : politique de confidentialité générique','warn');
+    var ctx={
+      name:appName,
+      owner:owner,
+      repo:repo,
+      email:f.email,
+      appId:byId('appIdInput').value.trim()||'(à définir)',
+      features:detectPlayFeatures(code),
+      analysed:analysed,
+      shortDesc:f.short,
+      fullDesc:f.full,
+      category:f.category,
+      ads:f.ads==='oui',
+      dataOut:f.dataOut==='oui',
+      shotsNew:playShots.length,
+      shotsRepo:repoShots,
+      pagesUrl:'https://'+owner.toLowerCase()+'.github.io/'+repo+'/play-store/privacy.html'
+    };
+    var D='play-store/';
+    await pushFileToRepo(token,owner,repo,branch,D+'icon-512.png',iconUrl.split(',')[1],'feat: dossier Play Store (icône 512)');
+    await pushFileToRepo(token,owner,repo,branch,D+'feature-graphic-1024x500.jpg',featUrl.split(',')[1],'feat: dossier Play Store (image de présentation)');
+    for(var i=0;i<playShots.length;i++){
+      await pushFileToRepo(token,owner,repo,branch,D+'screenshots/phone-'+(i+1)+'.jpg',playShots[i].dataURL.split(',')[1],'feat: dossier Play Store (capture '+(i+1)+')');
+    }
+    if(playShots.length)logMsg('🖼️ '+playShots.length+' capture(s) envoyée(s)','success');
+    await pushFileToRepo(token,owner,repo,branch,D+'privacy.html',utf8_to_b64(buildPrivacyHtml(ctx)),'feat: dossier Play Store (politique de confidentialité)');
+    await pushFileToRepo(token,owner,repo,branch,D+'DOSSIER.md',utf8_to_b64(buildPlayDossier(ctx)),'feat: dossier Play Store (guide)');
+    logMsg('✅ Fichiers envoyés dans '+owner+'/'+repo+'/play-store','success');
+    var pg=await enablePages(token,owner,repo,branch);
+    if(pg.ok){
+      logMsg('🔗 Politique de confidentialité : '+ctx.pagesUrl,'highlight');
+      logMsg('⏳ Disponible dans 1 à 3 minutes (GitHub Pages)','info');
+    }else{
+      logMsg('⚠️ GitHub Pages non activé : '+pg.message+' (dépôt privé ou droits insuffisants)','warn');
+    }
+    logMsg('📂 Dossier : https://github.com/'+owner+'/'+repo+'/tree/'+branch+'/play-store','highlight');
+    notify('Dossier Play Store prêt','success');
+    haptic(10);
+  }catch(err){
+    logMsg('❌ Dossier Play Store : '+err.message,'error');
+    notify(err.message,'danger');
+  }finally{
+    playPackBusy=false;
+    if(sb)sb.disabled=false;
+    if(pb)pb.disabled=false;
+  }
+}
+function injectPlaySheet(){
+  if(byId('playSheet'))return;
+  var ov=document.createElement('div');
+  ov.className='sheet-overlay';
+  ov.id='playOverlay';
+  ov.addEventListener('click',function(){closeSheet('play');});
+  var sh=document.createElement('div');
+  sh.className='sheet';
+  sh.id='playSheet';
+  var opt=function(v,t){return '<option value="'+v+'" style="background:#0f1219;color:#f8fafc;">'+t+'</option>';};
+  var cats=opt('','Choisir…')+PLAY_CATEGORIES.map(function(c){return opt(escapeHtml(c),escapeHtml(c));}).join('');
+  var area='height:auto;min-height:100px;padding:12px 14px;resize:vertical;overflow:auto;line-height:1.5;-webkit-user-select:text;user-select:text;';
+  var box='padding:10px 12px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);border-radius:12px;';
+  var hint='class="info-item-desc" style="margin:4px 2px 0;"';
+  sh.innerHTML=`<div class="sheet-handle"></div>
+<div class="sheet-head">
+  <div class="sheet-head-left">
+    <div class="sheet-icon">📝</div>
+    <div><div class="sheet-sub">Google Play</div><div class="sheet-title">Infos à fournir</div></div>
+  </div>
+  <button type="button" class="sheet-close" id="playSheetClose">✕</button>
+</div>
+<div class="sheet-body">
+  <div ${hint} style="margin:0 0 12px;">Les champs marqués d'une étoile (*) sont obligatoires. Ils sont mémorisés pour la prochaine fois.</div>
+
+  <div class="field-wrap">
+    <label class="field-label" for="playEmail">✉️ Email de contact *</label>
+    <input id="playEmail" class="field" type="email" placeholder="toi@exemple.com" autocomplete="email">
+    <div ${hint}>Affiché publiquement dans la politique de confidentialité.</div>
+  </div>
+
+  <div class="field-wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <label class="field-label" for="playShort" style="margin:0 0 6px 2px;">✏️ Description courte *</label>
+      <span id="playShortCount" class="info-item-desc">0 / 80</span>
+    </div>
+    <input id="playShort" class="field" type="text" maxlength="80" placeholder="Une phrase qui dit ce que fait l'appli">
+  </div>
+
+  <div class="field-wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <label class="field-label" for="playFull" style="margin:0 0 6px 2px;">📄 Description complète *</label>
+      <span id="playFullCount" class="info-item-desc">0 / 4000 · minimum 80</span>
+    </div>
+    <textarea id="playFull" class="field" maxlength="4000" style="${area}" placeholder="À quoi sert l'appli, ses fonctions principales, pour qui."></textarea>
+  </div>
+
+  <div class="field-wrap">
+    <label class="field-label" for="playCategory">🗂️ Catégorie *</label>
+    <select id="playCategory" class="field">${cats}</select>
+  </div>
+
+  <div class="field-wrap">
+    <label class="field-label" for="playAds">📣 Publicités *</label>
+    <select id="playAds" class="field">${opt('','Choisir…')}${opt('non','Non, aucune publicité')}${opt('oui',"Oui, l'appli affiche des publicités")}</select>
+  </div>
+
+  <div class="field-wrap">
+    <label class="field-label" for="playDataOut">📡 Données qui quittent l'appareil *</label>
+    <select id="playDataOut" class="field">${opt('','Choisir…')}${opt('non',"Non, tout reste sur l'appareil")}${opt('oui','Oui, vers un serveur ou un service tiers')}</select>
+    <div ${hint}>Sert à rédiger la politique de confidentialité et le guide de la « Sécurité des données ». Réponds selon ce que fait vraiment ton appli.</div>
+  </div>
+
+  <div class="field-wrap">
+    <label class="field-label">🖼️ Captures d'écran du téléphone * (2 à 8)</label>
+    <div id="playShotsBox" style="${box}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <input type="file" id="playShotsInput" accept="image/*" multiple style="display:none;">
+        <button type="button" class="icon-btn-sm accent" id="playShotsBtn">🖼️ Ajouter</button>
+        <span id="playShotsCount" class="info-item-desc" style="color:#fcd34d;">0 / 8 · minimum 2</span>
+      </div>
+      <div id="playShotsGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;"></div>
+      <div ${hint}>Si tu ne rajoutes rien, celles déjà présentes dans le dépôt (play-store/screenshots) sont conservées. Les formats trop allongés sont complétés par des bandes.</div>
+    </div>
+  </div>
+
+  <div class="field-wrap">
+    <label class="field-label">🎨 Icône</label>
+    <div id="playIconStatus" class="info-item-desc"></div>
+  </div>
+
+  <div class="field-wrap">
+    <label id="playPrivacyBox" class="icon-area" style="cursor:pointer;">
+      <input type="checkbox" id="playPrivacyOk" style="width:20px;height:20px;flex:0 0 20px;accent-color:#facc15;">
+      <span class="info-item-desc" style="flex:1;">Je relirai la politique de confidentialité générée et je l'adapterai si besoin avant de publier. *</span>
+    </label>
+  </div>
+
+  <button type="button" class="btn btn-primary" id="playSubmitBtn"><span>📁</span><span>GÉNÉRER LE DOSSIER</span></button>
+</div>`;
+  document.body.appendChild(ov);
+  document.body.appendChild(sh);
+  byId('playSheetClose').addEventListener('click',function(){closeSheet('play');});
+  ['playEmail','playShort','playFull','playCategory','playAds','playDataOut','playPrivacyOk'].forEach(function(id){
+    var el=byId(id);
+    var h=function(){
+      markPlayField(id==='playPrivacyOk'?'playPrivacyBox':id,false);
+      updatePlayCounters();
+      savePlayForm();
+    };
+    el.addEventListener('input',h);
+    el.addEventListener('change',h);
+  });
+  byId('playShotsBtn').addEventListener('click',function(){byId('playShotsInput').click();});
+  byId('playShotsInput').addEventListener('change',function(e){
+    var input=e.target;
+    addPlayShots(input.files).then(function(){input.value='';});
+  });
+  byId('playSubmitBtn').addEventListener('click',function(){submitPlayPack();});
+}
+injectPlaySheet();
+async function generatePlayPack(){
+  if(playPackBusy)return;
+  var token=byId('ghToken').value.trim();
+  if(!token||token.length<20){notify('Token requis','danger');return;}
+  var appName=byId('appNameInput').value.trim();
+  if(!appName){notify("Choisis d'abord le nom de l'application",'warning');return;}
+  if(currentMode!=='direct'&&!currentRepo){notify('Sélectionne un projet','warning');return;}
+  openPlayForm();
+}
+const PLAY_AUTO_KEY = 'apkor_play_auto';
+const PLAY_STATUS_KEY = 'apkor_play_status';
+const PLAY_SA_KEY = 'apkor_play_sa';
+async function findDraftRelease(token,owner,repo,tag){
+  for(var p=1;p<=10;p++){
+    var r=await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/releases?per_page=100&page='+p,{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}});
+    if(!r.ok)return null;
+    var list=await r.json();
+    if(!Array.isArray(list))return null;
+    for(var i=0;i<list.length;i++){
+      if(list[i].draft&&list[i].tag_name===tag)return list[i];
+    }
+    if(list.length<100)return null;
+  }
+  return null;
+}
+async function ensurePlayApiKey(token,owner,repo){
+  var raw=store.getItem(PLAY_SA_KEY);
+  if(!raw){
+    markPlayField('playSaBtn',true);
+    throw new Error("Envoi auto activé : enregistre d'abord la clé API Google Play (bouton 🔑)");
+  }
+  var H={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'};
+  var API='https://api.github.com/repos/'+owner+'/'+repo+'/releases';
+  var payload=JSON.stringify({
+    tag_name:'apkor-play-api',
+    name:'APKor - clé API Google Play (privé, ne pas supprimer)',
+    body:'ATTENTION clé privée - ne pas partager - apkor-play-key:'+utf8_to_b64(raw),
+    draft:true,
+    prerelease:true
+  });
+  var rel=await findDraftRelease(token,owner,repo,'apkor-play-api');
+  var res=rel?await fetch(API+'/'+rel.id,{method:'PATCH',headers:H,body:payload}):await fetch(API,{method:'POST',headers:H,body:payload});
+  if(!res.ok){
+    var e=await res.json().catch(function(){return{};});
+    throw new Error('Clé API Google Play non enregistrée dans le dépôt : '+(e.message||res.status));
+  }
+  logMsg('🔑 Clé API Google Play synchronisée avec le dépôt (brouillon privé)','success');
+}
+function getPlayUploadSteps(appId, repoName, status) {
+  return `      - name: 🔑 Clé API Google Play
+        continue-on-error: true
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        run: |
+          API="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          rm -f play-sa.json
+          if [ ! -f capacitor-app/${repoName}.aab ]; then
+            echo "::warning::Pas d'AAB : envoi Google Play ignore"
+            echo "PLAY_SA=0" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          P=1
+          BODY=""
+          while [ "$P" -le 10 ]; do
+            PAGE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$API/releases?per_page=100&page=$P")
+            BODY=$(echo "$PAGE" | jq -r '[.[] | select(.draft == true and .tag_name == "apkor-play-api")] | .[0].body // empty')
+            N=$(echo "$PAGE" | jq 'length')
+            if [ -n "$BODY" ] || [ "$N" -lt 100 ]; then break; fi
+            P=$((P+1))
+          done
+          KEY=$(echo "$BODY" | tr -d '\\r' | grep -o 'apkor-play-key:[A-Za-z0-9+/=]*' | head -n 1 | cut -d: -f2)
+          if [ -z "$KEY" ]; then
+            echo "::warning::Cle API Google Play absente du depot : envoi ignore"
+            echo "PLAY_SA=0" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "$KEY" | base64 -d > play-sa.json
+          if ! jq -e '.client_email' play-sa.json > /dev/null; then
+            echo "::warning::Cle API illisible : envoi ignore"
+            rm -f play-sa.json
+            echo "PLAY_SA=0" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "PLAY_SA=1" >> "$GITHUB_ENV"
+
+      - name: 🚀 Envoi vers Google Play (piste interne)
+        if: env.PLAY_SA == '1'
+        continue-on-error: true
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: play-sa.json
+          packageName: ${appId}
+          releaseFiles: capacitor-app/${repoName}.aab
+          track: internal
+          status: ${status}
+
+      - name: 🧹 Nettoyage clé API
+        if: always()
+        run: rm -f play-sa.json
+
+`;
+}
+function updatePlayAutoUi(){
+  var st=byId('playSaStatus');
+  if(!st)return;
+  var email='';
+  try{
+    var j=JSON.parse(store.getItem(PLAY_SA_KEY)||'null');
+    if(j&&j.client_email)email=j.client_email;
+  }catch(e){}
+  if(email){
+    st.textContent='✅ Clé enregistrée : '+email;
+    st.style.color='#86efac';
+  }else{
+    st.textContent="⚠️ Aucune clé : obligatoire pour l'envoi automatique";
+    st.style.color='#fcd34d';
+  }
+  var cb=byId('playAutoInput');
+  markPlayField('playSaBtn',!!(cb&&cb.checked&&!email));
+}
+async function savePlaySaFile(file){
+  try{
+    var j=JSON.parse(await file.text());
+    if(j.type!=='service_account'||!j.client_email||!j.private_key)throw new Error("ce n'est pas une clé JSON de compte de service Google");
+    store.setItem(PLAY_SA_KEY,JSON.stringify(j));
+    logMsg('🔑 Clé API Google Play enregistrée ('+j.client_email+')','success');
+    notify('Clé API enregistrée','success');
+    showSaveIndicator();
+  }catch(err){
+    logMsg('❌ Clé API refusée : '+err.message,'error');
+    notify('Clé API refusée : '+err.message,'danger');
+  }
+  updatePlayAutoUi();
+}
+function injectPlayAutoToggle(){
+  if(byId('playAutoWrap'))return;
+  var anchor=byId('playModeWrap')||byId('appIdField');
+  if(!anchor||!anchor.parentNode)return;
+  var wrap=document.createElement('div');
+  wrap.className='field-wrap';
+  wrap.id='playAutoWrap';
+  var opt=function(v,t){return '<option value="'+v+'" style="background:#0f1219;color:#f8fafc;">'+t+'</option>';};
+  wrap.innerHTML=`<label class="icon-area" style="cursor:pointer;">
+  <input type="checkbox" id="playAutoInput" style="width:20px;height:20px;flex:0 0 20px;accent-color:#facc15;">
+  <span style="min-width:0;flex:1;">
+    <span class="info-item-title" style="display:block;margin:0 0 2px 0;">🚀 Envoi auto vers Google Play</span>
+    <span class="info-item-desc" style="display:block;">Envoie l'AAB signé sur la piste de test interne à chaque build. La première version doit avoir été envoyée à la main dans la Console.</span>
+  </span>
+</label>
+<div class="icon-btn-row" style="margin-top:6px;align-items:center;">
+  <input type="file" id="playSaInput" accept=".json,application/json" style="display:none;">
+  <button type="button" class="icon-btn-sm accent" id="playSaBtn">🔑 Clé API Google Play *</button>
+  <select id="playStatusSel" class="field" style="height:38px;width:auto;flex:1;min-width:140px;font-size:11px;">${opt('draft','Brouillon (à valider)')}${opt('completed','Publié aux testeurs')}</select>
+</div>
+<div id="playSaStatus" class="info-item-desc" style="margin-top:6px;"></div>`;
+  anchor.parentNode.insertBefore(wrap,anchor.nextSibling);
+  var cb=byId('playAutoInput');
+  var sel=byId('playStatusSel');
+  cb.checked=store.getItem(PLAY_AUTO_KEY)==='1';
+  sel.value=store.getItem(PLAY_STATUS_KEY)||'draft';
+  cb.addEventListener('change',function(){
+    store.setItem(PLAY_AUTO_KEY,cb.checked?'1':'0');
+    showSaveIndicator();
+    haptic(6);
+    updatePlayAutoUi();
+    logMsg(cb.checked?"🚀 Envoi automatique vers Google Play activé (clé API obligatoire)":'🚀 Envoi automatique vers Google Play désactivé','info');
+  });
+  sel.addEventListener('change',function(){
+    store.setItem(PLAY_STATUS_KEY,sel.value);
+    showSaveIndicator();
+  });
+  byId('playSaBtn').addEventListener('click',function(){byId('playSaInput').click();});
+  byId('playSaInput').addEventListener('change',function(e){
+    var input=e.target;
+    var fl=input.files&&input.files[0];
+    if(fl)savePlaySaFile(fl).then(function(){input.value='';});
+  });
+  updatePlayAutoUi();
+}
+injectPlayAutoToggle();
 
 async function verifyTokenAndLoadRepos(token){logMsg('🔍 Vérification token...','info');setStatus('CHARGEMENT...','loading');try{var all=[];var url='https://api.github.com/user/repos?per_page=100&sort=updated&direction=desc&affiliation=owner,collaborator,organization_member';var pageCount=0;while(url&&pageCount<20){pageCount++;var res=await fetch(url,{headers:{'Authorization':'Bearer '+token}});if(!res.ok){if(res.status===401)throw new Error('Token invalide ou expiré');if(res.status===403)throw new Error('Rate limit atteint');throw new Error('Erreur '+res.status);}var data=await res.json();if(Array.isArray(data))data.forEach(function(r){all.push(r);});var link=res.headers.get('Link')||res.headers.get('link')||'';url=null;if(link){var m=link.match(/<([^>]+)>;\s*rel="next"/);if(m)url=m[1];}}reposMap.clear();all.forEach(function(repo){reposMap.set(repo.name.toLowerCase(),repo);});store.setItem(LS_KEYS.TOKEN,token);showSaveIndicator();logMsg('✅ '+reposMap.size+' projets chargés','success');setStatus('OK · '+reposMap.size,'success');updateTokenUI(true);if(currentMode==='repo'){byId('repoInput').disabled=false;byId('repoInput').placeholder='Tape le nom du projet...';byId('repoInput').value='';byId('repoDropdown').classList.remove('open');byId('buildBtn').disabled=true;setRepoBadgeText('');}else{byId('buildBtn').disabled=false;fetchSandboxDefaultBranch(token);}}catch(err){logMsg('❌ '+err.message,'error');setStatus('ERREUR','error');updateTokenUI(false);byId('repoInput').disabled=true;byId('repoInput').placeholder='Token invalide';byId('buildBtn').disabled=true;notify(err.message,'danger');}}
 function refreshRepos(){var token=byId('ghToken').value.trim();if(!token||token.length<20){notify('Token requis','warning');return;}verifyTokenAndLoadRepos(token);}
@@ -3258,7 +4288,22 @@ function toggleHistory(){var section=byId('historySection');section.classList.to
 
 function generateQR(url){var qrCanvas=byId('qrCanvas');if(!qrCanvas)return;try{if(typeof qrcode==='undefined'){logMsg('⚠️ qrcode non chargé','warn');return;}var qr=qrcode(0,'M');qr.addData(url);qr.make();var ctx=qrCanvas.getContext('2d');var size=150;var cellSize=Math.floor(size/qr.getModuleCount());qrCanvas.width=size;qrCanvas.height=size;ctx.fillStyle='#ffffff';ctx.fillRect(0,0,size,size);for(var row=0;row<qr.getModuleCount();row++){for(var col=0;col<qr.getModuleCount();col++){if(qr.isDark(row,col)){ctx.fillStyle='#0b0d15';ctx.fillRect(col*cellSize,row*cellSize,cellSize,cellSize);}}}byId('qrContainer').classList.add('show');logMsg('📱 QR code généré','success');}catch(e){logMsg('⚠️ Erreur QR : '+e.message,'warn');}}
 
-async function pollOnce(){if(pollInFlight)return;pollInFlight=true;try{if(!currentPollToken||!currentPollOwner||!currentPollRepo||!currentPollDispatchDate)return;currentPollAttempts++;if(currentPollAttempts>currentPollMaxAttempts){if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}logMsg('⏱️ Délai dépassé','warn');setStatus('TIMEOUT','error');byId('buildBtn').disabled=false;buildInProgress=false;currentRunId=null;currentPollToken=null;currentPollOwner=null;currentPollRepo=null;currentPollDispatchDate=null;currentPollAttempts=0;return;}try{var res=await fetch('https://api.github.com/repos/'+currentPollOwner+'/'+currentPollRepo+'/actions/runs?event=workflow_dispatch&per_page=10',{headers:{'Authorization':'Bearer '+currentPollToken}});if(!res.ok)return;var data=await res.json();if(!data.workflow_runs||data.workflow_runs.length===0){logMsg('⏳ File d\'attente...','warn');return;}var filteredRuns=data.workflow_runs.filter(function(run){var runDate=new Date(run.created_at);return runDate.getTime()>=currentPollDispatchDate.getTime()-currentPollTolerance;});if(filteredRuns.length===0)filteredRuns=[data.workflow_runs[0]];var run=filteredRuns[0];currentRunId=run.id;currentRunNumber=run.run_number;var status=run.status;var conclusion=run.conclusion;if(status==='queued'){logMsg('⏳ File d\'attente...','warn');}else if(status==='in_progress'){logMsg('🔧 Compilation...','info');setStatus('BUILD...','loading');}else if(status==='completed'){if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}byId('buildBtn').disabled=false;buildInProgress=false;currentRunId=null;var completedRepo=currentPollRepo;var completedOwner=currentPollOwner;currentPollToken=null;currentPollOwner=null;currentPollRepo=null;currentPollDispatchDate=null;currentPollAttempts=0;if(conclusion==='success'){logMsg('✅ Build réussi !','success');setStatus('SUCCÈS','success');var url='https://github.com/'+completedOwner+'/'+completedRepo+'/releases/download/v'+currentRunNumber+'/'+completedRepo+'.apk';directDownloadUrl=url;byId('downloadBtn').style.display='flex';byId('logsBtn').style.display='none';generateQR(url);saveToHistory(completedRepo,url,currentMode,completedOwner);notify('APK prêt !','success');}else{logMsg('❌ Échec ('+conclusion+')','error');setStatus('ÉCHEC','error');buildLogsUrl = run.html_url;byId('logsBtn').style.display='flex';notify('Build échoué','danger');}}}catch(e){}}finally{pollInFlight=false;}}
+async function pollOnce(){if(pollInFlight)return;pollInFlight=true;try{if(!currentPollToken||!currentPollOwner||!currentPollRepo||!currentPollDispatchDate)return;currentPollAttempts++;if(currentPollAttempts>currentPollMaxAttempts){if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}logMsg('⏱️ Délai dépassé','warn');setStatus('TIMEOUT','error');byId('buildBtn').disabled=false;buildInProgress=false;currentRunId=null;currentPollToken=null;currentPollOwner=null;currentPollRepo=null;currentPollDispatchDate=null;currentPollAttempts=0;return;}try{var res=await fetch('https://api.github.com/repos/'+currentPollOwner+'/'+currentPollRepo+'/actions/runs?event=workflow_dispatch&per_page=10',{headers:{'Authorization':'Bearer '+currentPollToken}});if(!res.ok)return;var data=await res.json();if(!data.workflow_runs||data.workflow_runs.length===0){logMsg('⏳ File d\'attente...','warn');return;}var filteredRuns=data.workflow_runs.filter(function(run){var runDate=new Date(run.created_at);return runDate.getTime()>=currentPollDispatchDate.getTime()-currentPollTolerance;});if(filteredRuns.length===0)filteredRuns=[data.workflow_runs[0]];var run=filteredRuns[0];currentRunId=run.id;currentRunNumber=run.run_number;var status=run.status;var conclusion=run.conclusion;if(status==='queued'){logMsg('⏳ File d\'attente...','warn');}else if(status==='in_progress'){logMsg('🔧 Compilation...','info');setStatus('BUILD...','loading');}else if(status==='completed'){if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}byId('buildBtn').disabled=false;buildInProgress=false;currentRunId=null;var completedRepo=currentPollRepo;var completedOwner=currentPollOwner;currentPollToken=null;currentPollOwner=null;currentPollRepo=null;currentPollDispatchDate=null;currentPollAttempts=0;if(conclusion==='success'){logMsg('✅ Build réussi !','success');setStatus('SUCCÈS','success');var url='https://github.com/'+completedOwner+'/'+completedRepo+'/releases/download/v'+currentRunNumber+'/'+completedRepo+'.apk';directDownloadUrl=url;byId('downloadBtn').style.display='flex';byId('logsBtn').style.display='none';generateQR(url);reportPlayAssets(completedOwner,completedRepo,currentRunNumber);saveToHistory(completedRepo,url,currentMode,completedOwner);notify('APK prêt !','success');}else{logMsg('❌ Échec ('+conclusion+')','error');setStatus('ÉCHEC','error');buildLogsUrl = run.html_url;byId('logsBtn').style.display='flex';notify('Build échoué','danger');}}}catch(e){}}finally{pollInFlight=false;}}
+async function reportPlayAssets(owner,repo,runNumber){
+  try{
+    var token=byId('ghToken').value.trim();
+    var res=await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/releases/tags/v'+runNumber,{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}});
+    if(!res.ok)return;
+    var d=await res.json();
+    var aab=(d.assets||[]).find(function(a){return a&&a.name&&/\.aab$/i.test(String(a.name));});
+    if(aab){
+      logMsg('📦 AAB Play Store : '+aab.browser_download_url,'highlight');
+      logMsg('🔑 Clé d\'envoi : brouillon privé « apkor-keystore » sur github.com/'+owner+'/'+repo+'/releases (à sauvegarder)','info');
+    }else{
+      logMsg('⚠️ Pas d\'AAB dans cette release (signature indisponible, APK debug)','warn');
+    }
+  }catch(e){}
+}
 function startPolling(token,pollOwner,pollRepo,dispatchTimestamp){if(pollingInterval){clearInterval(pollingInterval);pollingInterval=null;}currentPollToken=token;currentPollOwner=pollOwner;currentPollRepo=pollRepo;currentPollDispatchDate=new Date(dispatchTimestamp);currentPollAttempts=0;pollingInterval=setInterval(function(){pollOnce();},8000);}
 function manualCheck(){if(!buildInProgress){logMsg('⚠️ Aucun build en cours','warn');return;}logMsg('🔄 Vérification manuelle...','info');pollOnce();}
 
@@ -3271,6 +4316,9 @@ async function ensureWorkflowExists(token,targetOwner,targetRepo){
   var ownerPart = (targetOwner||'app').toLowerCase().replace(/[^a-z0-9_]/g,'').replace(/^[0-9]+/,'')||'app';
   var repoPart = targetRepo.toLowerCase().replace(/[^a-z0-9_]/g,'').replace(/^[0-9]+/,'')||'app';
   var appId = byId('appIdInput').value.trim() || ('com.'+ownerPart+'.'+repoPart);
+  var playMode = !!(byId('playModeInput') && byId('playModeInput').checked);
+  var playAuto = store.getItem(PLAY_AUTO_KEY)==='1';
+  var pubAnchor='      - name: Publication en Release';
   
   if(!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/.test(appId)) {
     throw new Error('ID de package invalide (ex: com.moi.monapp). Pas de tirets, majuscules, espaces ni chiffres au début.');
@@ -3279,6 +4327,7 @@ async function ensureWorkflowExists(token,targetOwner,targetRepo){
 appName = appName.replace(/["\\$`]/g, '');
 
 var newYaml=getYamlContent(targetRepo, appName, appId);
+newYaml=newYaml.replace("--exclude='.github'",function(){ return "--exclude='.github' --exclude='play-store'"; });
 var audioAnchor='      - name: Génération icône';
 var audioDiag=''
   +'      - name: 🔎 Vérification plugin son interne\n'
@@ -3294,7 +4343,40 @@ var audioDiag=''
 if(newYaml.indexOf(audioAnchor)===-1){
   logMsg('⚠️ Ancre workflow introuvable : plugin son interne non injecté','warn');
 }else{
-  newYaml=newYaml.replace(audioAnchor,function(){ return getInternalAudioSteps(appId)+audioDiag+getWakeNotifySteps(appId)+getNativeKitSteps(appId)+audioAnchor; });
+  newYaml=newYaml.replace(audioAnchor,function(){ return getInternalAudioSteps(appId)+audioDiag+getWakeNotifySteps(appId)+getNativeKitSteps(appId)+(playMode?getPlayModeStep():'')+audioAnchor; });
+}
+var sdkAnchor='      - name: 🔐 Détection et injection automatique des permissions';
+if(newYaml.indexOf(sdkAnchor)===-1){
+  logMsg('⚠️ Ancre workflow introuvable : cible API 36 non appliquée','warn');
+}else{
+  newYaml=newYaml.replace(sdkAnchor,function(){ return getSdkStep()+sdkAnchor; });
+}
+var signStart=newYaml.indexOf('      - name: Versioning et Signature');
+var signEnd=newYaml.indexOf(pubAnchor);
+if(signStart===-1||signEnd<=signStart){
+  logMsg('⚠️ Ancre workflow introuvable : AAB et clé de signature non injectés','warn');
+}else{
+  newYaml=newYaml.slice(0,signStart)+getPlaySteps(targetRepo)+newYaml.slice(signEnd);
+  newYaml=newYaml.replace('artifacts: "capacitor-app/'+targetRepo+'.apk"',function(){ return 'artifacts: "capacitor-app/'+targetRepo+'.apk,capacitor-app/'+targetRepo+'.aab"'; });
+  logMsg('📦 Sortie : APK + AAB signé (Play Store, API 36)','info');
+}
+if(playMode){
+  if(newYaml.indexOf(pubAnchor)===-1){
+    logMsg('⚠️ Ancre workflow introuvable : contrôle Play Store non injecté','warn');
+  }else{
+    newYaml=newYaml.replace(pubAnchor,function(){ return getPlayCheckStep(targetRepo)+pubAnchor; });
+  }
+  logMsg('🛍️ Mode Play Store actif : permissions restreintes retirées, AAB signé exigé','info');
+}
+if(playAuto){
+  if(newYaml.indexOf(pubAnchor)===-1){
+    logMsg('⚠️ Ancre workflow introuvable : envoi Google Play non injecté','warn');
+  }else{
+    await ensurePlayApiKey(token,targetOwner,targetRepo);
+    var playStatus=store.getItem(PLAY_STATUS_KEY)==='completed'?'completed':'draft';
+    newYaml=newYaml.replace(pubAnchor,function(){ return getPlayUploadSteps(appId,targetRepo,playStatus)+pubAnchor; });
+    logMsg('🚀 Envoi automatique vers Google Play : piste interne, statut '+playStatus,'info');
+  }
 }
 var newEncoded=utf8_to_b64(newYaml);
 var sha=null;
